@@ -14,10 +14,21 @@
     "build": "react-scripts build"
   },
   "eslintConfig": {
-    "extends": ["react-app"]
+    "extends": [
+      "react-app"
+    ]
   },
   "browserslist": {
-    "production": [">0.2%", "not dead"],
-    "development": ["last 1 chrome version"]
+    "production": [
+      ">0.2%",
+      "not dead"
+    ],
+    "development": [
+      "last 1 chrome version"
+    ]
+  },
+  "allowScripts": {
+    "core-js@3.49.0": true,
+    "core-js-pure@3.49.0": true
   }
 }
