@@ -14,6 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Navbar from '../components/Navbar';
 import { getProducts } from '../utils/api';
+import { useDateRange } from '../utils/DateRangeContext';
 
 // Format currency helper
 function formatCurrency(value) {
@@ -24,8 +25,7 @@ function formatCurrency(value) {
 }
 
 export default function ProductsView() {
-  const [startDate, setStartDate] = useState('2022-01-01');
-  const [endDate,   setEndDate]   = useState('2022-12-31');
+  const { startDate, setStartDate, endDate, setEndDate } = useDateRange();
   const [products,  setProducts]  = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState(null);
@@ -66,7 +66,13 @@ export default function ProductsView() {
 
         {loading && <div className="loading">Loading products data…</div>}
 
-        {!loading && !error && (
+        {!loading && !error && products.length === 0 && (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 8, border: '1px solid var(--border)' }}>
+            No data found for the selected date range.
+          </div>
+        )}
+
+        {!loading && !error && products.length > 0 && (
           <div className="grid-2">
 
             {/*

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './utils/ThemeContext';
+import { DateRangeProvider } from './utils/DateRangeContext';
 import OrdersView   from './pages/OrdersView';
 import ProductsView from './pages/ProductsView';
 import CustomersView from './pages/CustomersView';
@@ -9,6 +10,7 @@ import './App.css';
 export default function App() {
   return (
     <ThemeProvider>
+      <DateRangeProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/"          element={<Navigate to="/orders" replace />} />
@@ -18,6 +20,7 @@ export default function App() {
           <Route path="*"          element={<Navigate to="/orders" replace />} />
         </Routes>
       </BrowserRouter>
+      </DateRangeProvider>
     </ThemeProvider>
   );
 }

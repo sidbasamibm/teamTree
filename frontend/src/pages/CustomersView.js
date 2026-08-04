@@ -13,6 +13,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import { getCustomers } from '../utils/api';
+import { useDateRange } from '../utils/DateRangeContext';
 
 function formatCurrency(value) {
   if (!value) return '$0';
@@ -20,8 +21,7 @@ function formatCurrency(value) {
 }
 
 export default function CustomersView() {
-  const [startDate,  setStartDate]  = useState('2022-01-01');
-  const [endDate,    setEndDate]    = useState('2022-12-31');
+  const { startDate, setStartDate, endDate, setEndDate } = useDateRange();
   const [customers,  setCustomers]  = useState([]);
   const [sortBy,     setSortBy]     = useState('total_spent');
   const [sortDir,    setSortDir]    = useState('desc');
@@ -89,7 +89,13 @@ export default function CustomersView() {
 
         {loading && <div className="loading">Loading customers…</div>}
 
-        {!loading && !error && (
+        {!loading && !error && customers.length === 0 && (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 8, border: '1px solid var(--border)' }}>
+            No data found for the selected date range.
+          </div>
+        )}
+
+        {!loading && !error && customers.length > 0 && (
           <div className="card">
             <div className="section-title" style={{ marginBottom: 16 }}>
               Top Customers by Revenue

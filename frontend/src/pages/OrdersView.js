@@ -18,10 +18,10 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import Navbar from '../components/Navbar';
 import { getSummary, getOrders, getCities } from '../utils/api';
+import { useDateRange } from '../utils/DateRangeContext';
 
 export default function OrdersView() {
-  const [startDate, setStartDate] = useState('2022-01-01');
-  const [endDate,   setEndDate]   = useState('2022-12-31');
+  const { startDate, setStartDate, endDate, setEndDate } = useDateRange();
   const [summary,   setSummary]   = useState(null);
   const [orders,    setOrders]    = useState([]);
   const [cities,    setCities]    = useState([]);
@@ -74,7 +74,13 @@ export default function OrdersView() {
         {loading && <div className="loading">Loading orders data…</div>}
 
         {/* ── TODO: Build the UI here ────────────────────────────────────── */}
-        {!loading && !error && (
+        {!loading && !error && orders.length === 0 && (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 8, border: '1px solid var(--border)' }}>
+            No data found for the selected date range.
+          </div>
+        )}
+
+        {!loading && !error && orders.length > 0 && (
           <>
             {/*
               STEP 1 — Stat cards
