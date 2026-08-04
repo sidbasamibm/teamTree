@@ -385,3 +385,4 @@ def get_cities(start: str = "2022-01-01", end: str = "2022-12-31"):
         }
         for row in results
     ]
+    
