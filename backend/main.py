@@ -370,4 +370,253 @@ def get_cities(start: str = "2022-01-01", end: str = "2022-12-31"):
         }
         for row in results
     ]
+
+
+# ── Insights endpoints ────────────────────────────────────────────────────────
+
+@app.get("/franchise/products/{product_id}/insights", tags=["Insights"])
+def get_product_insights(product_id: str, start: str = "2022-01-01", end: str = "2022-12-31"):
+    """
+    Returns detailed analytics for a specific product:
+    - Monthly revenue and units sold trend
+    - Top 5 customers who purchased this product
+    - Total revenue and units in date range
+    - Average order value for this product
+    """
+    conn = get_connection()
+
+    # Get product details
+    product_info = execute_query(conn, """
+        SELECT product_id, name, category, price
+        FROM dim_product
+        WHERE product_id = ?
+    """, (product_id,))
+
+    if not product_info:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Monthly trend
+    monthly_trend = execute_query(conn, """
+        SELECT
+            d.year || '-' || printf('%02d', d.month) AS month,
+            d.month_name,
+            COUNT(DISTINCT f.order_id) AS order_count,
+            SUM(f.quantity) AS units_sold,
+            SUM(f.amount) AS revenue
+        FROM fact_orders f
+        JOIN dim_date d ON f.date_key = d.date_key
+        WHERE f.product_id = ?
+          AND f.order_date BETWEEN ? AND ?
+          AND f.status IN ('delivered', 'shipped')
+        GROUP BY d.year, d.month, d.month_name
+        ORDER BY d.year, d.month
+    """, (product_id, start, end))
+
+    # Top customers for this product
+    top_customers = execute_query(conn, """
+        SELECT
+            c.customer_id,
+            c.name,
+            c.addr_city AS city,
+            c.addr_state AS state,
+            COUNT(DISTINCT f.order_id) AS order_count,
+            SUM(f.quantity) AS units_purchased,
+            SUM(f.amount) AS total_spent
+        FROM fact_orders f
+        JOIN dim_customer c ON f.customer_id = c.customer_id
+        WHERE f.product_id = ?
+          AND f.order_date BETWEEN ? AND ?
+          AND f.status IN ('delivered', 'shipped')
+          AND c.is_current = 1
+        GROUP BY c.customer_id, c.name, c.addr_city, c.addr_state
+        ORDER BY total_spent DESC
+        LIMIT 5
+    """, (product_id, start, end))
+
+    # Summary stats
+    summary = execute_query(conn, """
+        SELECT
+            COUNT(DISTINCT order_id) AS total_orders,
+            SUM(quantity) AS total_units,
+            SUM(amount) AS total_revenue,
+            AVG(amount) AS avg_order_value
+        FROM fact_orders
+        WHERE product_id = ?
+          AND order_date BETWEEN ? AND ?
+          AND status IN ('delivered', 'shipped')
+    """, (product_id, start, end))
+
+    return {
+        "product": {
+            "product_id": product_info[0]["product_id"],
+            "name": product_info[0]["name"],
+            "category": product_info[0]["category"],
+            "price": round(product_info[0]["price"] or 0, 2)
+        },
+        "summary": {
+            "total_orders": summary[0]["total_orders"],
+            "total_units": summary[0]["total_units"],
+            "total_revenue": round(summary[0]["total_revenue"] or 0, 2),
+            "avg_order_value": round(summary[0]["avg_order_value"] or 0, 2)
+        },
+        "monthly_trend": [
+            {
+                "month": row["month"],
+                "month_name": row["month_name"],
+                "order_count": row["order_count"],
+                "units_sold": row["units_sold"],
+                "revenue": round(row["revenue"] or 0, 2)
+            }
+            for row in monthly_trend
+        ],
+        "top_customers": [
+            {
+                "customer_id": row["customer_id"],
+                "name": row["name"],
+                "city": row["city"],
+                "state": row["state"],
+                "order_count": row["order_count"],
+                "units_purchased": row["units_purchased"],
+                "total_spent": round(row["total_spent"] or 0, 2)
+            }
+            for row in top_customers
+        ]
+    }
+
+
+@app.get("/franchise/customers/{customer_id}/insights", tags=["Insights"])
+def get_customer_insights(customer_id: str, start: str = "2022-01-01", end: str = "2022-12-31"):
+    """
+    Returns detailed analytics for a specific customer:
+    - Monthly spending trend
+    - Top 5 purchased products
+    - Favorite product categories
+    - Purchase frequency and patterns
+    """
+    conn = get_connection()
+
+    # Get customer details
+    customer_info = execute_query(conn, """
+        SELECT customer_id, name, email, addr_city, addr_state
+        FROM dim_customer
+        WHERE customer_id = ? AND is_current = 1
+    """, (customer_id,))
+
+    if not customer_info:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    # Monthly spending trend
+    monthly_trend = execute_query(conn, """
+        SELECT
+            d.year || '-' || printf('%02d', d.month) AS month,
+            d.month_name,
+            COUNT(DISTINCT f.order_id) AS order_count,
+            SUM(f.quantity) AS items_purchased,
+            SUM(f.amount) AS total_spent
+        FROM fact_orders f
+        JOIN dim_date d ON f.date_key = d.date_key
+        WHERE f.customer_id = ?
+          AND f.order_date BETWEEN ? AND ?
+          AND f.status IN ('delivered', 'shipped')
+        GROUP BY d.year, d.month, d.month_name
+        ORDER BY d.year, d.month
+    """, (customer_id, start, end))
+
+    # Top products purchased
+    top_products = execute_query(conn, """
+        SELECT
+            p.product_id,
+            p.name,
+            p.category,
+            COUNT(DISTINCT f.order_id) AS order_count,
+            SUM(f.quantity) AS units_purchased,
+            SUM(f.amount) AS total_spent
+        FROM fact_orders f
+        JOIN dim_product p ON f.product_id = p.product_id
+        WHERE f.customer_id = ?
+          AND f.order_date BETWEEN ? AND ?
+          AND f.status IN ('delivered', 'shipped')
+        GROUP BY p.product_id, p.name, p.category
+        ORDER BY total_spent DESC
+        LIMIT 5
+    """, (customer_id, start, end))
+
+    # Category preferences
+    category_breakdown = execute_query(conn, """
+        SELECT
+            p.category,
+            COUNT(DISTINCT f.order_id) AS order_count,
+            SUM(f.quantity) AS units_purchased,
+            SUM(f.amount) AS total_spent
+        FROM fact_orders f
+        JOIN dim_product p ON f.product_id = p.product_id
+        WHERE f.customer_id = ?
+          AND f.order_date BETWEEN ? AND ?
+          AND f.status IN ('delivered', 'shipped')
+        GROUP BY p.category
+        ORDER BY total_spent DESC
+    """, (customer_id, start, end))
+
+    # Summary stats
+    summary = execute_query(conn, """
+        SELECT
+            COUNT(DISTINCT order_id) AS total_orders,
+            SUM(quantity) AS total_items,
+            SUM(amount) AS total_spent,
+            AVG(amount) AS avg_order_value,
+            MIN(order_date) AS first_order_date,
+            MAX(order_date) AS last_order_date
+        FROM fact_orders
+        WHERE customer_id = ?
+          AND order_date BETWEEN ? AND ?
+          AND status IN ('delivered', 'shipped')
+    """, (customer_id, start, end))
+
+    return {
+        "customer": {
+            "customer_id": customer_info[0]["customer_id"],
+            "name": customer_info[0]["name"],
+            "email": customer_info[0]["email"],
+            "city": customer_info[0]["addr_city"],
+            "state": customer_info[0]["addr_state"]
+        },
+        "summary": {
+            "total_orders": summary[0]["total_orders"],
+            "total_items": summary[0]["total_items"],
+            "total_spent": round(summary[0]["total_spent"] or 0, 2),
+            "avg_order_value": round(summary[0]["avg_order_value"] or 0, 2),
+            "first_order_date": summary[0]["first_order_date"],
+            "last_order_date": summary[0]["last_order_date"]
+        },
+        "monthly_trend": [
+            {
+                "month": row["month"],
+                "month_name": row["month_name"],
+                "order_count": row["order_count"],
+                "items_purchased": row["items_purchased"],
+                "total_spent": round(row["total_spent"] or 0, 2)
+            }
+            for row in monthly_trend
+        ],
+        "top_products": [
+            {
+                "product_id": row["product_id"],
+                "name": row["name"],
+                "category": row["category"],
+                "order_count": row["order_count"],
+                "units_purchased": row["units_purchased"],
+                "total_spent": round(row["total_spent"] or 0, 2)
+            }
+            for row in top_products
+        ],
+        "category_breakdown": [
+            {
+                "category": row["category"],
+                "order_count": row["order_count"],
+                "units_purchased": row["units_purchased"],
+                "total_spent": round(row["total_spent"] or 0, 2)
+            }
+            for row in category_breakdown
+        ]
+    }
     

@@ -12,7 +12,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
-import { getCustomers } from '../utils/api';
+import InsightsModal from '../components/InsightsModal';
+import { getCustomers, getCustomerInsights } from '../utils/api';
 import { useDateRange } from '../utils/DateRangeContext';
 
 function formatCurrency(value) {
@@ -27,6 +28,8 @@ export default function CustomersView() {
   const [sortDir,    setSortDir]    = useState('desc');
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
+  const [insightsData, setInsightsData] = useState(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -41,6 +44,22 @@ export default function CustomersView() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleViewInsights(customerId) {
+    setInsightsLoading(true);
+    try {
+      const data = await getCustomerInsights(customerId, startDate, endDate);
+      setInsightsData(data);
+    } catch (err) {
+      alert(`Failed to load insights: ${err.message}`);
+    } finally {
+      setInsightsLoading(false);
+    }
+  }
+
+  function closeInsights() {
+    setInsightsData(null);
   }
 
   // Sort handler — toggles direction if same column, resets to desc if new column
@@ -101,21 +120,6 @@ export default function CustomersView() {
               Top Customers by Revenue
             </div>
 
-            {/*
-              STEP 1 — Sortable table
-              sorted is: [{ customer_id, name, city, state, total_orders, total_spent }]
-
-              Build a table with these columns:
-                Name | City | State | Orders | Total Spent
-
-              Each column header should be clickable and call handleSort(columnName).
-              Use sortIcon(columnName) to show ↑ or ↓ on the active sort column.
-
-              Hint: use a standard HTML <table> with <thead> and <tbody>.
-              Style alternating rows with different background colors.
-              Format total_spent with formatCurrency().
-            */}
-
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
                 <tr>
@@ -127,8 +131,11 @@ export default function CustomersView() {
                     { label: 'Total Spent', col: 'total_spent'  },
                   ].map(({ label, col }) => (
                     <th
-                      key={col}
-                      onClick={() => handleSort(col)}
+                      key={label}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSort(col);
+                      }}
                       style={{
                         padding: '10px 12px',
                         textAlign: col === 'total_spent' || col === 'total_orders' ? 'right' : 'left',
@@ -149,7 +156,27 @@ export default function CustomersView() {
                 {sorted.map((c, i) => (
                   <tr
                     key={c.customer_id}
-                    style={{ background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)' }}
+                    onClick={() => handleViewInsights(c.customer_id)}
+                    style={{
+                      background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)',
+                      cursor: insightsLoading ? 'wait' : 'pointer',
+                      transition: 'all 0.2s ease',
+                      transform: 'scale(1)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--accent-light)';
+                      e.currentTarget.style.transform = 'scale(1.02)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 191, 165, 0.15)';
+                      e.currentTarget.style.position = 'relative';
+                      e.currentTarget.style.zIndex = '10';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)';
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = 'none';
+                      e.currentTarget.style.position = 'static';
+                      e.currentTarget.style.zIndex = 'auto';
+                    }}
                   >
                     <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' }}>{c.name}</td>
                     <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' }}>{c.city}</td>
@@ -164,6 +191,13 @@ export default function CustomersView() {
           </div>
         )}
       </div>
+
+      <InsightsModal
+        isOpen={!!insightsData}
+        onClose={closeInsights}
+        data={insightsData}
+        type="customer"
+      />
     </div>
   );
 }

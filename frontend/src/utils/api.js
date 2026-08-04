@@ -25,3 +25,11 @@ export async function getOrders(s, e)   { return apiFetch(`/franchise/orders?sta
 export async function getProducts(s, e) { return apiFetch(`/franchise/products?start=${s}&end=${e}`); }
 export async function getCustomers(s,e) { return apiFetch(`/franchise/customers?start=${s}&end=${e}`); }
 export async function getCities(s, e)   { return apiFetch(`/franchise/cities?start=${s}&end=${e}`); }
+
+// Insights endpoints
+export async function getProductInsights(productId, s, e) {
+  return apiFetch(`/franchise/products/${productId}/insights?start=${s}&end=${e}`);
+}
+export async function getCustomerInsights(customerId, s, e) {
+  return apiFetch(`/franchise/customers/${customerId}/insights?start=${s}&end=${e}`);
+}

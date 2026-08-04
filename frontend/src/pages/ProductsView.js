@@ -13,7 +13,8 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Navbar from '../components/Navbar';
-import { getProducts } from '../utils/api';
+import InsightsModal from '../components/InsightsModal';
+import { getProducts, getProductInsights } from '../utils/api';
 import { useDateRange } from '../utils/DateRangeContext';
 
 // Format currency helper
@@ -29,6 +30,8 @@ export default function ProductsView() {
   const [products,  setProducts]  = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState(null);
+  const [insightsData, setInsightsData] = useState(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -43,6 +46,22 @@ export default function ProductsView() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleViewInsights(productId) {
+    setInsightsLoading(true);
+    try {
+      const data = await getProductInsights(productId, startDate, endDate);
+      setInsightsData(data);
+    } catch (err) {
+      alert(`Failed to load insights: ${err.message}`);
+    } finally {
+      setInsightsLoading(false);
+    }
+  }
+
+  function closeInsights() {
+    setInsightsData(null);
   }
 
   return (
@@ -132,7 +151,27 @@ export default function ProductsView() {
                   {products.map((p, i) => (
                     <tr
                       key={p.product_id}
-                      style={{ background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)' }}
+                      onClick={() => handleViewInsights(p.product_id)}
+                      style={{
+                        background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)',
+                        cursor: insightsLoading ? 'wait' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        transform: 'scale(1)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--accent-light)';
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 191, 165, 0.15)';
+                        e.currentTarget.style.position = 'relative';
+                        e.currentTarget.style.zIndex = '10';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)';
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = 'none';
+                        e.currentTarget.style.position = 'static';
+                        e.currentTarget.style.zIndex = 'auto';
+                      }}
                     >
                       <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)' }}>{p.name}</td>
                       <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)' }}>{p.category}</td>
@@ -147,6 +186,13 @@ export default function ProductsView() {
           </div>
         )}
       </div>
+
+      <InsightsModal
+        isOpen={!!insightsData}
+        onClose={closeInsights}
+        data={insightsData}
+        type="product"
+      />
     </div>
   );
 }
