@@ -78,24 +78,64 @@ export default function ProductsView() {
             */}
             <div className="card">
               <div className="section-title" style={{ marginBottom: 16 }}>Top 10 Products by Revenue</div>
-              {/* TODO: add your bar chart here */}
-              <div className="loading" style={{ height: 300 }}>
-                Implement the products bar chart
-              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  layout="vertical"
+                  data={[...products]
+                    .sort((a, b) => b.revenue - a.revenue)
+                    .slice(0, 10)
+                    .map(p => ({ ...p, name: p.name.length > 20 ? p.name.slice(0, 20) + '…' : p.name }))}
+                  margin={{ top: 0, right: 24, left: 8, bottom: 0 }}
+                >
+                  <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
+                  <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(v) => formatCurrency(v)} />
+                  <Bar dataKey="revenue" fill="var(--accent)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
 
-            {/*
-              STEP 2 — Products table
-              Show all products in a table: Name | Category | Units Sold | Revenue
-              Hint: use an HTML table or build with divs.
-              Format revenue with the formatCurrency helper above.
-            */}
             <div className="card">
               <div className="section-title" style={{ marginBottom: 16 }}>Product Details</div>
-              {/* TODO: add your table here */}
-              <div className="loading" style={{ height: 300 }}>
-                Implement the products table
-              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                <thead>
+                  <tr>
+                    {[
+                      { label: 'Name',       align: 'left'  },
+                      { label: 'Category',   align: 'left'  },
+                      { label: 'Units Sold', align: 'right' },
+                      { label: 'Revenue',    align: 'right' },
+                    ].map(({ label, align }) => (
+                      <th
+                        key={label}
+                        style={{
+                          padding: '10px 12px',
+                          textAlign: align,
+                          background: 'var(--bg-primary)',
+                          borderBottom: '2px solid var(--border)',
+                          color: 'var(--text-primary)',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((p, i) => (
+                    <tr
+                      key={p.product_id}
+                      style={{ background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)' }}
+                    >
+                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)' }}>{p.name}</td>
+                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)' }}>{p.category}</td>
+                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>{p.units_sold.toLocaleString()}</td>
+                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>{formatCurrency(p.revenue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
           </div>
