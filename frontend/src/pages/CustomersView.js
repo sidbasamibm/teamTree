@@ -82,7 +82,7 @@ export default function CustomersView() {
         </div>
 
         {error && (
-          <div style={{ color: '#C62828', padding: 16, background: '#FFEBEE', borderRadius: 8, marginBottom: 16 }}>
+          <div style={{ color: '#000D1F', padding: 16, background: '#FFCDD2', borderRadius: 8, marginBottom: 16, borderLeft: '4px solid #FF6B6B' }}>
             Error: {error}
           </div>
         )}
@@ -136,7 +136,7 @@ export default function CustomersView() {
                         borderBottom: '2px solid var(--border)',
                         cursor: 'pointer',
                         userSelect: 'none',
-                        color: sortBy === col ? 'var(--accent, #3b82d4)' : 'var(--text-primary, #1f2328)',
+                        color: sortBy === col ? 'var(--accent)' : 'var(--text-primary)',
                         whiteSpace: 'nowrap',
                       }}
                     >

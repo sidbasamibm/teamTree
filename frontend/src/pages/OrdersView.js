@@ -65,7 +65,7 @@ export default function OrdersView() {
 
         {/* ── Error state ────────────────────────────────────────────────── */}
         {error && (
-          <div style={{ color: '#C62828', padding: 16, background: '#FFEBEE', borderRadius: 8, marginBottom: 16 }}>
+          <div style={{ color: '#000D1F', padding: 16, background: '#FFCDD2', borderRadius: 8, marginBottom: 16, borderLeft: '4px solid #FF6B6B' }}>
             Error: {error}
           </div>
         )}
@@ -123,7 +123,7 @@ export default function OrdersView() {
                   <XAxis dataKey="month_name" tick={{ fontSize: 12 }} />
                   <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
                   <Tooltip formatter={v => [`$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 'Revenue']} />
-                  <Bar dataKey="revenue" fill="#3b82d4" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="revenue" fill="#2D4EF5" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -147,7 +147,7 @@ export default function OrdersView() {
                   <XAxis type="number" tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
                   <YAxis type="category" dataKey="city" tick={{ fontSize: 12 }} width={76} />
                   <Tooltip formatter={v => [`$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 'Revenue']} />
-                  <Bar dataKey="revenue" fill="#7c5cd8" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="revenue" fill="#00BFA5" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

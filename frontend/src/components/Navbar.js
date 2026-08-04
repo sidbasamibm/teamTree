@@ -39,7 +39,7 @@ export default function Navbar() {
     <nav style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 24px', height: 56,
-      background: dark ? '#0D1B2A' : '#0D2B4E',
+      background: dark ? '#000D1F' : '#000D1F',
       boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
       position: 'sticky', top: 0, zIndex: 100,
     }}>
@@ -47,7 +47,7 @@ export default function Navbar() {
            onClick={() => navigate('/')}>
         <span style={{ fontSize: 20 }}>🛒</span>
         <span style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>NovaCart</span>
-        <span style={{ color: '#4DB6AC', fontSize: 12, marginLeft: 4 }}>Dashboard</span>
+        <span style={{ color: '#00BFA5', fontSize: 12, marginLeft: 4, fontWeight: 400 }}>Dashboard</span>
       </div>
 
       <div style={{ display: 'flex', gap: 8 }}>
@@ -56,9 +56,9 @@ export default function Navbar() {
           return (
             <button key={path} onClick={() => navigate(path)}
               style={{
-                background: active ? 'rgba(77,182,172,0.2)' : 'transparent',
-                border: active ? '1px solid #4DB6AC' : '1px solid transparent',
-                color: active ? '#4DB6AC' : '#B0BEC5',
+                background: active ? 'rgba(45,78,245,0.15)' : 'transparent',
+                border: active ? '1px solid #2D4EF5' : '1px solid transparent',
+                color: active ? '#C8E6F5' : '#A8E6CF',
                 borderRadius: 6, padding: '4px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 500,
                 display: 'inline-flex', alignItems: 'center',
               }}>

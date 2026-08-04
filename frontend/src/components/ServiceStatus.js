@@ -22,7 +22,7 @@ export default function ServiceStatus() {
     return () => clearInterval(interval);
   }, []);
 
-  const colors = { healthy: '#00897B', degraded: '#F9A825', error: '#C62828', checking: '#90A4AE' };
+  const colors = { healthy: '#00BFA5', degraded: '#F9A825', error: '#FF6B6B', checking: '#2D4EF5' };
   const labels = { healthy: 'Service healthy', degraded: 'Degraded', error: 'Offline', checking: 'Checking…' };
 
   return (

@@ -1,36 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&display=swap');
+
 :root {
-  --bg-primary:   #F5F7FA;
-  --bg-card:      #FFFFFF;
-  --text-primary: #1A2332;
-  --text-secondary:#455A64;
-  --text-muted:   #90A4AE;
-  --border:       #E0E6ED;
-  --accent:       #00897B;
-  --blue:         #1565C0;
-  --shadow:       0 2px 12px rgba(0,0,0,0.08);
-  --radius:       10px;
+  --bg-primary:    #C8E6F5;
+  --bg-card:       #FFFFFF;
+  --text-primary:  #000D1F;
+  --text-secondary:#000D1F;
+  --text-muted:    #4A6080;
+  --border:        #B0CCE0;
+  --accent:        #00BFA5;
+  --blue:          #2D4EF5;
+  --salmon:        #FF6B6B;
+  --mint:          #A8E6CF;
+  --shadow:        0 2px 12px rgba(0,13,31,0.08);
+  --radius:        10px;
 }
 
 [data-theme="dark"] {
-  --bg-primary:   #0D1B2A;
-  --bg-card:      #132337;
-  --text-primary: #E8EDF2;
-  --text-secondary:#90A4AE;
-  --text-muted:   #607D8B;
-  --border:       #1E3248;
-  --accent:       #4DB6AC;
-  --blue:         #42A5F5;
-  --shadow:       0 2px 12px rgba(0,0,0,0.3);
+  --bg-primary:    #000D1F;
+  --bg-card:       #051B3F;
+  --text-primary:  #FFFFFF;
+  --text-secondary:#C8E6F5;
+  --text-muted:    #A8E6CF;
+  --border:        #2D4EF5;
+  --accent:        #00BFA5;
+  --blue:          #2D4EF5;
+  --salmon:        #FF6B6B;
+  --mint:          #A8E6CF;
+  --shadow:        0 2px 12px rgba(0,0,0,0.4);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   transition: background 0.2s, color 0.2s;
   min-height: 100vh;
+  line-height: 1.5;
 }
 
 .page { max-width: 1280px; margin: 0 auto; padding: 24px; }

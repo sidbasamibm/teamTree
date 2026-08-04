@@ -59,7 +59,7 @@ export default function ProductsView() {
         </div>
 
         {error && (
-          <div style={{ color: '#C62828', padding: 16, background: '#FFEBEE', borderRadius: 8, marginBottom: 16 }}>
+          <div style={{ color: '#000D1F', padding: 16, background: '#FFCDD2', borderRadius: 8, marginBottom: 16, borderLeft: '4px solid #FF6B6B' }}>
             Error: {error}
           </div>
         )}
