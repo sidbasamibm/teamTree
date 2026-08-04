@@ -35,7 +35,7 @@ export default function OrdersView() {
     setError(null);
     try {
       const [s, o, c] = await Promise.all([
-        getSummary(),
+        getSummary(startDate, endDate),
         getOrders(startDate, endDate),
         getCities(startDate, endDate),
       ]);

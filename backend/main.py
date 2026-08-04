@@ -123,32 +123,16 @@ def authorize(request: Request):
 # ── Franchise endpoints ───────────────────────────────────────────────────────
 
 @app.get("/franchise/summary", tags=["Franchise"])
-def get_summary():
+def get_summary(start: str = "2022-01-01", end: str = "2022-12-31"):
     """
-    Returns an overview of all orders in the database:
+    Returns an overview of orders in the given date range:
     - Total revenue (delivered + shipped orders only)
     - Total orders
     - Number of unique customers
     - Date range of available data
-
-    Expected response:
-    {
-        "total_revenue": 1284750.00,
-        "total_orders": 8432,
-        "unique_customers": 380,
-        "date_range": { "start": "2022-01-01", "end": "2022-12-31" }
-    }
-
-    TODO: implement this endpoint.
-    Hints:
-      - Use fact_orders table
-      - Filter status IN ('delivered', 'shipped') for revenue
-      - Use MIN/MAX of order_date for date_range
     """
     conn = get_connection()
 
-    # Query fact_orders to get aggregated summary statistics
-    # Only count revenue from 'delivered' and 'shipped' orders per business rules
     results = execute_query(conn, """
         SELECT
             COUNT(DISTINCT order_id)    AS total_orders,
@@ -158,7 +142,8 @@ def get_summary():
             MAX(order_date)             AS end_date
         FROM fact_orders
         WHERE status IN ('delivered', 'shipped')
-    """)
+          AND order_date BETWEEN ? AND ?
+    """, (start, end))
 
     row = results[0]
     return {
