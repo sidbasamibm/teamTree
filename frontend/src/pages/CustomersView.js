@@ -126,8 +126,8 @@ export default function CustomersView() {
                       style={{
                         padding: '10px 12px',
                         textAlign: col === 'total_spent' || col === 'total_orders' ? 'right' : 'left',
-                        background: 'var(--bg-secondary, #f7f8fa)',
-                        borderBottom: '2px solid var(--border, #e5e7eb)',
+                        background: 'var(--bg-primary)',
+                        borderBottom: '2px solid var(--border)',
                         cursor: 'pointer',
                         userSelect: 'none',
                         color: sortBy === col ? 'var(--accent, #3b82d4)' : 'var(--text-primary, #1f2328)',
@@ -143,13 +143,13 @@ export default function CustomersView() {
                 {sorted.map((c, i) => (
                   <tr
                     key={c.customer_id}
-                    style={{ background: i % 2 === 0 ? 'var(--bg-primary, #ffffff)' : 'var(--bg-secondary, #f7f8fa)' }}
+                    style={{ background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)' }}
                   >
-                    <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border, #e5e7eb)' }}>{c.name}</td>
-                    <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border, #e5e7eb)' }}>{c.city}</td>
-                    <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border, #e5e7eb)' }}>{c.state}</td>
-                    <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border, #e5e7eb)', textAlign: 'right' }}>{c.total_orders}</td>
-                    <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border, #e5e7eb)', textAlign: 'right' }}>{formatCurrency(c.total_spent)}</td>
+                    <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' }}>{c.name}</td>
+                    <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' }}>{c.city}</td>
+                    <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' }}>{c.state}</td>
+                    <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)', textAlign: 'right' }}>{c.total_orders}</td>
+                    <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)', textAlign: 'right' }}>{formatCurrency(c.total_spent)}</td>
                   </tr>
                 ))}
               </tbody>

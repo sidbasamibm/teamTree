@@ -128,10 +128,10 @@ export default function ProductsView() {
                       key={p.product_id}
                       style={{ background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)' }}
                     >
-                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)' }}>{p.name}</td>
-                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)' }}>{p.category}</td>
-                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>{p.units_sold.toLocaleString()}</td>
-                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>{formatCurrency(p.revenue)}</td>
+                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' }}>{p.name}</td>
+                       <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' }}>{p.category}</td>
+                       <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)', textAlign: 'right' }}>{p.units_sold.toLocaleString()}</td>
+                       <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)', textAlign: 'right' }}>{formatCurrency(p.revenue)}</td>
                     </tr>
                   ))}
                 </tbody>
