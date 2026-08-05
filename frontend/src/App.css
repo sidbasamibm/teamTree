@@ -118,6 +118,11 @@ body {
 /* Responsive tables */
 .table-wrap { width: 100%; overflow-y: visible; padding: 4px 0; }
 .table-wrap table { width: 100%; table-layout: fixed; }
+.table-wrap td, .table-wrap th { transition: background 0.2s, color 0.2s, border-color 0.2s; }
+.table-wrap tr { transition: background 0.2s, box-shadow 0.15s, transform 0.15s; }
+.row-even { background: var(--bg-card); }
+.row-odd  { background: var(--bg-primary); }
+.row-even:hover, .row-odd:hover { background: var(--accent-light); }
 
 @media (max-width: 900px) {
   .table-wrap td, .table-wrap th { padding: 8px 8px; font-size: 13px; }
