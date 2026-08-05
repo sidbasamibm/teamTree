@@ -11,6 +11,7 @@
 
 import React, { useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { useTheme } from '../utils/ThemeContext';
 
 const CustomersIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"
@@ -50,6 +51,8 @@ function formatCurrency(value) {
 }
 
 export default function InsightsModal({ isOpen, onClose, data, type }) {
+  const { dark } = useTheme();
+  const tickColor = dark ? '#C8E6F5' : '#4A6080';
   // Close on ESC key
   useEffect(() => {
     const handleEsc = (e) => {
@@ -176,8 +179,8 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
             </div>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={trend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <XAxis dataKey="month_name" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11 }} />
+                <XAxis dataKey="month_name" tick={{ fontSize: 11, fill: tickColor }} />
+                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11, fill: tickColor }} />
                 <Tooltip formatter={(v) => formatCurrency(v)} />
                 <Line
                   type="monotone"
@@ -196,8 +199,8 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
               <div className="section-title" style={{ marginBottom: 16 }}>Category Preferences</div>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={data.category_breakdown} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <XAxis dataKey="category" tick={{ fontSize: 11 }} />
-                  <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11 }} />
+                  <XAxis dataKey="category" tick={{ fontSize: 11, fill: tickColor }} />
+                  <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11, fill: tickColor }} />
                   <Tooltip formatter={(v) => formatCurrency(v)} />
                   <Bar dataKey="total_spent" fill="var(--accent)" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -210,8 +213,8 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
               <div className="section-title" style={{ marginBottom: 16 }}>Units Sold Trend</div>
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={trend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <XAxis dataKey="month_name" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
+                  <XAxis dataKey="month_name" tick={{ fontSize: 11, fill: tickColor }} />
+                  <YAxis tick={{ fontSize: 11, fill: tickColor }} />
                   <Tooltip />
                   <Line
                     type="monotone"

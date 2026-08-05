@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import Navbar from '../components/Navbar';
+import { useTheme } from '../utils/ThemeContext';
 import ErrorBanner from '../components/ErrorBanner';
 import EmptyState from '../components/EmptyState';
 import { getSummary, getOrders, getCities } from '../utils/api';
@@ -11,6 +12,8 @@ const fmtCurrency = v => `$${Number(v).toLocaleString('en-US', { minimumFraction
 
 export default function OrdersView() {
   const { startDate, setStartDate, endDate, setEndDate } = useDateRange();
+  const { dark } = useTheme();
+  const tickColor = dark ? '#C8E6F5' : '#4A6080';
   const [summary, setSummary] = useState(null);
   const [orders,  setOrders]  = useState([]);
   const [cities,  setCities]  = useState([]);
@@ -85,8 +88,8 @@ export default function OrdersView() {
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={orders} margin={{ top: 4, right: 16, left: 16, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="month_name" tick={{ fontSize: 12 }} />
-                  <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
+                  <XAxis dataKey="month_name" tick={{ fontSize: 12, fill: tickColor }} />
+                  <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12, fill: tickColor }} />
                   <Tooltip formatter={v => [fmtCurrency(v), 'Revenue']} />
                   <Bar dataKey="revenue" fill="#2D4EF5" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -98,8 +101,8 @@ export default function OrdersView() {
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={cities.slice(0, 10)} layout="vertical" margin={{ top: 4, right: 32, left: 80, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
-                  <YAxis type="category" dataKey="city" tick={{ fontSize: 12 }} width={76} />
+                  <XAxis type="number" tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12, fill: tickColor }} />
+                  <YAxis type="category" dataKey="city" tick={{ fontSize: 12, fill: tickColor }} width={76} />
                   <Tooltip formatter={v => [fmtCurrency(v), 'Revenue']} />
                   <Bar dataKey="revenue" fill="#00BFA5" radius={[0, 4, 4, 0]} />
                 </BarChart>

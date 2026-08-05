@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Navbar from '../components/Navbar';
+import { useTheme } from '../utils/ThemeContext';
 import ErrorBanner from '../components/ErrorBanner';
 import EmptyState from '../components/EmptyState';
 import InsightsModal from '../components/InsightsModal';
@@ -19,6 +20,8 @@ const TD = { padding: '9px 12px', borderBottom: '1px solid var(--border)', color
 
 export default function ProductsView() {
   const { startDate, setStartDate, endDate, setEndDate } = useDateRange();
+  const { dark } = useTheme();
+  const tickColor = dark ? '#C8E6F5' : '#4A6080';
   const [products,        setProducts]        = useState([]);
   const [loading,         setLoading]         = useState(true);
   const [error,           setError]           = useState(null);
@@ -84,8 +87,8 @@ export default function ProductsView() {
                     .map(p => ({ ...p, name: p.name.length > 20 ? p.name.slice(0, 20) + '…' : p.name }))}
                   margin={{ top: 0, right: 24, left: 8, bottom: 0 }}
                 >
-                  <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
-                  <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
+                  <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 12, fill: tickColor }} />
+                  <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12, fill: tickColor }} />
                   <Tooltip formatter={v => formatCurrency(v)} />
                   <Bar dataKey="revenue" fill="var(--accent)" radius={[0, 4, 4, 0]} />
                 </BarChart>
