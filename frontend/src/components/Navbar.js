@@ -89,7 +89,7 @@ export default function Navbar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
            onClick={() => navigate('/')}>
         <span style={{ background: '#BBDEFB', borderRadius: '6px', padding: '2px 6px', display: 'inline-flex', alignItems: 'center' }}>
-          <img src="/helix2.png" alt="logo" width="24" height="32" style={{ display: 'block', mixBlendMode: 'multiply' }} />
+          <img src="/helix2.png" alt="logo" width="30" height="40" style={{ display: 'block', mixBlendMode: 'multiply' }} />
         </span>
         <span style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>NovaCart</span>
         <span style={{ color: '#00BFA5', fontSize: 12, marginLeft: 4, fontWeight: 400 }}>Dashboard</span>
