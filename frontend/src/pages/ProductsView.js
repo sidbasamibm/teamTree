@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import ErrorBanner from '../components/ErrorBanner';
 import EmptyState from '../components/EmptyState';
 import InsightsModal from '../components/InsightsModal';
+import DateRangePicker from '../components/DateRangePicker';
 import { getProducts, getProductInsights } from '../utils/api';
 import { useDateRange } from '../utils/DateRangeContext';
 import { exportCsv } from '../utils/exportCsv';
@@ -27,11 +28,11 @@ export default function ProductsView() {
 
   useEffect(() => { loadData(); }, []);
 
-  async function loadData() {
+  async function loadData(start = startDate, end = endDate) {
     setLoading(true);
     setError(null);
     try {
-      setProducts(await getProducts(startDate, endDate));
+      setProducts(await getProducts(start, end));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -39,10 +40,10 @@ export default function ProductsView() {
     }
   }
 
-  async function handleViewInsights(productId) {
+  async function handleViewInsights(productId, start = startDate, end = endDate) {
     setInsightsLoading(true);
     try {
-      setInsightsData(await getProductInsights(productId, startDate, endDate));
+      setInsightsData(await getProductInsights(productId, start, end));
     } catch (err) {
       alert(`Failed to load insights: ${err.message}`);
     } finally {
@@ -56,11 +57,7 @@ export default function ProductsView() {
       <div className="page">
 
         <div className="filter-bar">
-          <label>From</label>
-          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-          <label>To</label>
-          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-          <button className="btn-apply" onClick={loadData}>Apply</button>
+          <DateRangePicker onApply={loadData} />
           <button className="btn-download" style={{ marginLeft: 'auto' }} onClick={() => exportCsv(products, `products_${startDate}_${endDate}`)} disabled={products.length === 0}>
             ⬇ Download Products
           </button>

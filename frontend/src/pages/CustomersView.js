@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar';
 import ErrorBanner from '../components/ErrorBanner';
 import EmptyState from '../components/EmptyState';
 import InsightsModal from '../components/InsightsModal';
+import DateRangePicker from '../components/DateRangePicker';
 import { getCustomers, getCustomerInsights } from '../utils/api';
 import { useDateRange } from '../utils/DateRangeContext';
 import { exportCsv } from '../utils/exportCsv';
@@ -34,11 +35,11 @@ export default function CustomersView() {
 
   useEffect(() => { loadData(); }, []);
 
-  async function loadData() {
+  async function loadData(start = startDate, end = endDate) {
     setLoading(true);
     setError(null);
     try {
-      setCustomers(await getCustomers(startDate, endDate));
+      setCustomers(await getCustomers(start, end));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -46,10 +47,10 @@ export default function CustomersView() {
     }
   }
 
-  async function handleViewInsights(customerId) {
+  async function handleViewInsights(customerId, start = startDate, end = endDate) {
     setInsightsLoading(true);
     try {
-      setInsightsData(await getCustomerInsights(customerId, startDate, endDate));
+      setInsightsData(await getCustomerInsights(customerId, start, end));
     } catch (err) {
       alert(`Failed to load insights: ${err.message}`);
     } finally {
@@ -80,11 +81,7 @@ export default function CustomersView() {
       <div className="page">
 
         <div className="filter-bar">
-          <label>From</label>
-          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-          <label>To</label>
-          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-          <button className="btn-apply" onClick={loadData}>Apply</button>
+          <DateRangePicker onApply={loadData} />
           <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{customers.length} customers</span>
             <button className="btn-download" onClick={() => exportCsv(sorted, `customers_${startDate}_${endDate}`)} disabled={customers.length === 0}>
