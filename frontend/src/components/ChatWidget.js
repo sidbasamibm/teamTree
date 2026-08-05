@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../utils/ThemeContext';
+import addDocumentIcon from './add--document.svg';
 
 const MinimizeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="18" height="18" fill="#4DB6AC">
@@ -77,7 +78,8 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState([
     { from: 'bot', text: "Hi! I'm the NovaCart assistant. Ask me anything about the dashboard." }
   ]);
-  const bottomRef = useRef(null);
+  const bottomRef  = useRef(null);
+  const fileRef    = useRef(null);
 
   const size = expanded ? SIZES.expanded : SIZES.normal;
 
@@ -99,6 +101,16 @@ export default function ChatWidget() {
 
   function handleKey(e) {
     if (e.key === 'Enter') send();
+  }
+
+  function handleFileChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const userMsg = { from: 'user', text: `📎 ${file.name}`, isFile: true };
+    const botMsg  = { from: 'bot',  text: `File "${file.name}" received. Note: file analysis is not yet supported.` };
+    setMessages(prev => [...prev, userMsg, botMsg]);
+    // Reset so the same file can be re-selected
+    e.target.value = '';
   }
 
   const bg      = dark ? '#1E2A3A' : '#ffffff';
@@ -217,7 +229,27 @@ export default function ChatWidget() {
           <div style={{
             display: 'flex', borderTop: `1px solid ${border}`,
             background: bg, padding: '8px 10px', gap: 8, flexShrink: 0,
+            alignItems: 'center',
           }}>
+            {/* Hidden file input */}
+            <input
+              ref={fileRef}
+              type="file"
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+            />
+            {/* Attach button */}
+            <button
+              onClick={() => fileRef.current.click()}
+              title="Attach file"
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: 2,
+                display: 'flex', alignItems: 'center', flexShrink: 0,
+                opacity: 0.75,
+              }}>
+              <img src={addDocumentIcon} alt="Attach file" width={20} height={20}
+                style={{ filter: dark ? 'invert(1)' : 'none' }} />
+            </button>
             <input
               value={input}
               onChange={e => setInput(e.target.value)}
