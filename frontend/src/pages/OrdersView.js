@@ -5,7 +5,9 @@ import { useTheme } from '../utils/ThemeContext';
 import ErrorBanner from '../components/ErrorBanner';
 import EmptyState from '../components/EmptyState';
 import DateRangePicker from '../components/DateRangePicker';
-import { getSummary, getOrders, getCities } from '../utils/api';
+import MonthlyInsightsModal from '../components/MonthlyInsightsModal';
+import CityInsightsModal from '../components/CityInsightsModal';
+import { getSummary, getOrders, getCities, getProducts, getCustomers } from '../utils/api';
 import { useDateRange } from '../utils/DateRangeContext';
 import { exportCsv } from '../utils/exportCsv';
 
@@ -20,6 +22,9 @@ export default function OrdersView() {
   const [cities,  setCities]  = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
+  const [monthlyInsights, setMonthlyInsights] = useState(null);
+  const [cityInsights, setCityInsights] = useState(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -39,6 +44,63 @@ export default function OrdersView() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleBarClick(data) {
+    if (!data || insightsLoading) return;
+
+    setInsightsLoading(true);
+    try {
+      // Parse the month string (e.g., "2022-01") to get start and end dates
+      const [year, month] = data.month.split('-');
+      const monthStart = `${year}-${month}-01`;
+      const monthEnd = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
+
+      // Load all data for this month
+      const [summary, products, customers, cities] = await Promise.all([
+        getSummary(monthStart, monthEnd),
+        getProducts(monthStart, monthEnd),
+        getCustomers(monthStart, monthEnd),
+        getCities(monthStart, monthEnd),
+      ]);
+
+      setMonthlyInsights({
+        monthName: data.month_name + ' ' + year,
+        summary,
+        products,
+        customers,
+        cities,
+      });
+    } catch (err) {
+      alert(`Failed to load monthly insights: ${err.message}`);
+    } finally {
+      setInsightsLoading(false);
+    }
+  }
+
+  async function handleCityClick(data) {
+    if (!data || insightsLoading) return;
+
+    setInsightsLoading(true);
+    try {
+      // Load all data for this city
+      const [summary, products, customers] = await Promise.all([
+        getSummary(startDate, endDate, data.city, data.state),
+        getProducts(startDate, endDate, data.city, data.state),
+        getCustomers(startDate, endDate, data.city, data.state),
+      ]);
+
+      setCityInsights({
+        cityName: `${data.city}, ${data.state}`,
+        summary,
+        products,
+        customers,
+      });
+    } catch (err) {
+      alert(`Failed to load city insights: ${err.message}`);
+    } finally {
+      setInsightsLoading(false);
     }
   }
 
@@ -81,33 +143,67 @@ export default function OrdersView() {
             </div>
 
             <div className="card" style={{ marginBottom: 20 }}>
-              <div className="section-title" style={{ marginBottom: 16 }}>Monthly Revenue</div>
+              <div className="section-title" style={{ marginBottom: 16 }}>
+                Monthly Revenue
+                <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 12 }}>
+                  Click a bar for detailed insights
+                </span>
+              </div>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={orders} margin={{ top: 4, right: 16, left: 16, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="month_name" tick={{ fontSize: 12, fill: tickColor }} />
                   <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12, fill: tickColor }} />
                   <Tooltip formatter={v => [fmtCurrency(v), 'Revenue']} />
-                  <Bar dataKey="revenue" fill="#2D4EF5" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="revenue"
+                    fill="#2D4EF5"
+                    radius={[4, 4, 0, 0]}
+                    onClick={handleBarClick}
+                    cursor={insightsLoading ? 'wait' : 'pointer'}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
             <div className="card">
-              <div className="section-title" style={{ marginBottom: 16 }}>Revenue by City</div>
+              <div className="section-title" style={{ marginBottom: 16 }}>
+                Revenue by City
+                <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 12 }}>
+                  Click a bar for detailed insights
+                </span>
+              </div>
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={cities.slice(0, 10)} layout="vertical" margin={{ top: 4, right: 32, left: 80, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                   <XAxis type="number" tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12, fill: tickColor }} />
                   <YAxis type="category" dataKey="city" tick={{ fontSize: 12, fill: tickColor }} width={76} />
                   <Tooltip formatter={v => [fmtCurrency(v), 'Revenue']} />
-                  <Bar dataKey="revenue" fill="#00BFA5" radius={[0, 4, 4, 0]} />
+                  <Bar
+                    dataKey="revenue"
+                    fill="#00BFA5"
+                    radius={[0, 4, 4, 0]}
+                    onClick={handleCityClick}
+                    cursor={insightsLoading ? 'wait' : 'pointer'}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </>
         )}
       </div>
+
+      <MonthlyInsightsModal
+        isOpen={!!monthlyInsights}
+        onClose={() => setMonthlyInsights(null)}
+        data={monthlyInsights}
+      />
+
+      <CityInsightsModal
+        isOpen={!!cityInsights}
+        onClose={() => setCityInsights(null)}
+        data={cityInsights}
+      />
     </div>
   );
 }
