@@ -15,11 +15,11 @@ function formatCurrency(value) {
 const TD = { padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' };
 
 const COLUMNS = [
-  { label: 'Name',        col: 'name',         align: 'left'  },
-  { label: 'City',        col: 'city',         align: 'left'  },
-  { label: 'State',       col: 'state',        align: 'left'  },
-  { label: 'Orders',      col: 'total_orders', align: 'right' },
-  { label: 'Total Spent', col: 'total_spent',  align: 'right' },
+  { label: 'Name',        col: 'name',         align: 'left',  width: '30%'              },
+  { label: 'City',        col: 'city',         align: 'left',  width: '20%', hide: true  },
+  { label: 'State',       col: 'state',        align: 'left',  width: '10%', hide: true  },
+  { label: 'Orders',      col: 'total_orders', align: 'right', width: '15%'              },
+  { label: 'Total Spent', col: 'total_spent',  align: 'right', width: '25%'              },
 ];
 
 export default function CustomersView() {
@@ -101,13 +101,15 @@ export default function CustomersView() {
           <div className="card">
             <div className="section-title" style={{ marginBottom: 16 }}>Top Customers by Revenue</div>
 
+            <div className="table-wrap">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
                 <tr>
-                  {COLUMNS.map(({ label, col, align }) => (
-                    <th key={col} onClick={() => handleSort(col)} style={{
+                  {COLUMNS.map(({ label, col, align, hide, width }) => (
+                    <th key={col} onClick={() => handleSort(col)} className={hide ? 'col-hide-sm' : ''} style={{
                       ...TD,
                       textAlign: align,
+                      width,
                       background: 'var(--bg-primary)',
                       borderBottom: '2px solid var(--border)',
                       cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap',
@@ -147,14 +149,15 @@ export default function CustomersView() {
                     }}
                   >
                     <td style={TD}>{c.name}</td>
-                    <td style={TD}>{c.city}</td>
-                    <td style={TD}>{c.state}</td>
+                    <td style={TD} className="col-hide-sm">{c.city}</td>
+                    <td style={TD} className="col-hide-sm">{c.state}</td>
                     <td style={{ ...TD, textAlign: 'right' }}>{c.total_orders}</td>
                     <td style={{ ...TD, textAlign: 'right' }}>{formatCurrency(c.total_spent)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

@@ -94,16 +94,17 @@ export default function ProductsView() {
 
             <div className="card">
               <div className="section-title" style={{ marginBottom: 16 }}>Product Details</div>
+              <div className="table-wrap">
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                 <thead>
                   <tr>
                     {[
-                      { label: 'Name',       align: 'left'  },
-                      { label: 'Category',   align: 'left'  },
-                      { label: 'Units Sold', align: 'right' },
-                      { label: 'Revenue',    align: 'right' },
-                    ].map(({ label, align }) => (
-                      <th key={label} style={{ ...TD, textAlign: align, background: 'var(--bg-primary)', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' }}>
+                      { label: 'Name',       align: 'left'               },
+                      { label: 'Category',   align: 'left',  hide: true  },
+                      { label: 'Units Sold', align: 'right'              },
+                      { label: 'Revenue',    align: 'right'              },
+                    ].map(({ label, align, hide }) => (
+                      <th key={label} className={hide ? 'col-hide-sm' : ''} style={{ ...TD, textAlign: align, background: 'var(--bg-primary)', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' }}>
                         {label}
                       </th>
                     ))}
@@ -138,13 +139,14 @@ export default function ProductsView() {
                       }}
                     >
                       <td style={TD}>{p.name}</td>
-                      <td style={TD}>{p.category}</td>
+                      <td style={TD} className="col-hide-sm">{p.category}</td>
                       <td style={{ ...TD, textAlign: 'right' }}>{p.units_sold.toLocaleString()}</td>
                       <td style={{ ...TD, textAlign: 'right' }}>{formatCurrency(p.revenue)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
 
           </div>

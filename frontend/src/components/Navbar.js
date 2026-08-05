@@ -42,9 +42,9 @@ const ProductIcon = () => (
 );
 
 const LINKS = [
-  { label: <><OrdersIcon />Orders</>,     path: '/orders'    },
-  { label: <><ProductIcon />Products</>,  path: '/products'  },
-  { label: <><CustomersIcon />Customers</>, path: '/customers' },
+  { label: <><OrdersIcon /><span className="nav-label">Orders</span></>,     path: '/orders'    },
+  { label: <><ProductIcon /><span className="nav-label">Products</span></>,  path: '/products'  },
+  { label: <><CustomersIcon /><span className="nav-label">Customers</span></>, path: '/customers' },
 ];
 
 export default function Navbar() {
@@ -133,8 +133,9 @@ export default function Navbar() {
             borderRadius: 6, padding: '4px 12px',
             cursor: downloading ? 'wait' : 'pointer', fontSize: 13, fontWeight: 600,
             fontFamily: 'inherit', transition: 'background 0.15s, color 0.15s',
+            whiteSpace: 'nowrap',
           }}>
-          {downloading ? '…' : '⬇ Export All'}
+          {downloading ? '…' : <><span className="nav-label">⬇ Export All</span><span style={{ display: 'none' }} className="nav-label-hidden">⬇</span></>}
         </button>
         <button onClick={toggle} title={dark ? 'Light mode' : 'Dark mode'}
           onMouseEnter={() => setThemeHovered(true)}

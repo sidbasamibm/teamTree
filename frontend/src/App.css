@@ -42,6 +42,7 @@ body {
 }
 
 .page { max-width: 1280px; margin: 0 auto; padding: 24px; }
+@media (max-width: 600px) { .page { padding: 12px; } }
 
 .card {
   background: var(--bg-card);
@@ -50,16 +51,18 @@ body {
   padding: 20px;
   box-shadow: var(--shadow);
   margin-bottom: 20px;
+  overflow: visible;
 }
 
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .grid-2 { gap: 12px; } }
 
 .section-title { font-size: 17px; font-weight: 700; color: var(--text-primary); }
 
 .stat-row { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
 .stat-box {
-  flex: 1; min-width: 140px;
+  flex: 1; min-width: 120px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-left: 4px solid var(--accent);
@@ -69,6 +72,11 @@ body {
 }
 .stat-box .label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 .stat-box .value { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+@media (max-width: 600px) {
+  .stat-row { gap: 10px; margin-bottom: 16px; }
+  .stat-box { padding: 12px 14px; min-width: 100px; }
+  .stat-box .value { font-size: 18px; }
+}
 
 .filter-bar {
   display: flex; align-items: center; gap: 12px;
@@ -83,6 +91,11 @@ body {
 .filter-bar input, .filter-bar select {
   background: var(--bg-primary); border: 1px solid var(--border);
   border-radius: 6px; padding: 6px 10px; color: var(--text-primary); font-size: 13px;
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .filter-bar { gap: 8px; padding: 10px 12px; }
+  .filter-bar input { width: 100%; }
 }
 .btn-apply {
   background: var(--accent); color: white; border: none;
@@ -101,3 +114,22 @@ body {
 .btn-download:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .loading { display: flex; align-items: center; justify-content: center; height: 200px; color: var(--text-muted); font-size: 14px; }
+
+/* Responsive tables */
+.table-wrap { width: 100%; overflow-y: visible; padding: 4px 0; }
+.table-wrap table { width: 100%; table-layout: fixed; }
+
+@media (max-width: 900px) {
+  .table-wrap td, .table-wrap th { padding: 8px 8px; font-size: 13px; }
+}
+
+@media (max-width: 600px) {
+  .table-wrap td, .table-wrap th { padding: 6px 6px; font-size: 12px; }
+  .col-hide-sm { display: none; }
+}
+
+/* Navbar responsive */
+@media (max-width: 700px) {
+  .nav-label { display: none; }
+  .nav-label-hidden { display: inline !important; }
+}
