@@ -123,27 +123,44 @@ def authorize(request: Request):
 # ── Franchise endpoints ───────────────────────────────────────────────────────
 
 @app.get("/franchise/summary", tags=["Franchise"])
-def get_summary(start: str = "2022-01-01", end: str = "2022-12-31"):
+def get_summary(start: str = "2022-01-01", end: str = "2022-12-31", city: str = None, state: str = None):
     """
     Returns an overview of orders in the given date range:
     - Total revenue (delivered + shipped orders only)
     - Total orders
     - Number of unique customers
     - Date range of available data
+    - Optional filters: city, state
     """
     conn = get_connection()
 
-    results = execute_query(conn, """
+    # Build dynamic query based on filters
+    base_query = """
         SELECT
-            COUNT(DISTINCT order_id)    AS total_orders,
-            SUM(amount)                 AS total_revenue,
-            COUNT(DISTINCT customer_id) AS unique_customers,
-            MIN(order_date)             AS start_date,
-            MAX(order_date)             AS end_date
-        FROM fact_orders
-        WHERE status IN ('delivered', 'shipped')
-          AND order_date BETWEEN ? AND ?
-    """, (start, end))
+            COUNT(DISTINCT f.order_id)    AS total_orders,
+            SUM(f.amount)                 AS total_revenue,
+            COUNT(DISTINCT f.customer_id) AS unique_customers,
+            MIN(f.order_date)             AS start_date,
+            MAX(f.order_date)             AS end_date
+        FROM fact_orders f
+    """
+
+    where_clauses = ["f.status IN ('delivered', 'shipped')", "f.order_date BETWEEN ? AND ?"]
+    params = [start, end]
+
+    # Add city/state filtering if provided
+    if city or state:
+        base_query += " JOIN dim_customer c ON f.customer_id = c.customer_id"
+        where_clauses.append("c.is_current = 1")
+        if city:
+            where_clauses.append("c.addr_city = ?")
+            params.append(city)
+        if state:
+            where_clauses.append("c.addr_state = ?")
+            params.append(state)
+
+    query = base_query + " WHERE " + " AND ".join(where_clauses)
+    results = execute_query(conn, query, tuple(params))
 
     row = results[0]
     return {
@@ -210,30 +227,21 @@ def get_orders(start: str = "2022-01-01", end: str = "2022-12-31"):
 
 
 @app.get("/franchise/products", tags=["Franchise"])
-def get_products(start: str = "2022-01-01", end: str = "2022-12-31"):
+def get_products(start: str = "2022-01-01", end: str = "2022-12-31", city: str = None, state: str = None):
     """
     Returns the top 10 products by revenue for the given date range.
+    Optional filters: city, state (filters by customer location)
 
     Expected response:
     [
         { "product_id": "P001", "name": "Wireless Headphones", "category": "Electronics",
           "units_sold": 342, "revenue": 30578.58 }
     ]
-
-    TODO: implement this endpoint.
-    Hints:
-      - JOIN fact_orders with dim_product on product_id
-      - GROUP BY product_id, name, category
-      - ORDER BY revenue DESC, LIMIT 10
     """
     conn = get_connection()
 
-    # ── YOUR CODE HERE ────────────────────────────────────────────────────────
-    # JOIN fact_orders with dim_product to get product details
-    # Aggregate by product to calculate total units sold and revenue
-    # Only include delivered/shipped orders, filter by date range
-    # Return top 10 products by revenue
-    results = execute_query(conn, """
+    # Build dynamic query based on filters
+    base_query = """
         SELECT
             p.product_id,
             p.name,
@@ -242,12 +250,29 @@ def get_products(start: str = "2022-01-01", end: str = "2022-12-31"):
             SUM(f.amount) AS revenue
         FROM fact_orders f
         JOIN dim_product p ON f.product_id = p.product_id
-        WHERE f.order_date BETWEEN ? AND ?
-          AND f.status IN ('delivered', 'shipped')
+    """
+
+    where_clauses = ["f.order_date BETWEEN ? AND ?", "f.status IN ('delivered', 'shipped')"]
+    params = [start, end]
+
+    # Add city/state filtering if provided
+    if city or state:
+        base_query += " JOIN dim_customer c ON f.customer_id = c.customer_id"
+        where_clauses.append("c.is_current = 1")
+        if city:
+            where_clauses.append("c.addr_city = ?")
+            params.append(city)
+        if state:
+            where_clauses.append("c.addr_state = ?")
+            params.append(state)
+
+    query = base_query + " WHERE " + " AND ".join(where_clauses) + """
         GROUP BY p.product_id, p.name, p.category
         ORDER BY revenue DESC
         LIMIT 10
-    """, (start, end))
+    """
+
+    results = execute_query(conn, query, tuple(params))
 
     # Format the results with proper rounding for revenue
     return [
@@ -263,32 +288,36 @@ def get_products(start: str = "2022-01-01", end: str = "2022-12-31"):
 
 
 @app.get("/franchise/customers", tags=["Franchise"])
-def get_customers(start: str = "2022-01-01", end: str = "2022-12-31"):
+def get_customers(start: str = "2022-01-01", end: str = "2022-12-31", city: str = None, state: str = None):
     """
     Returns the top 20 customers by revenue for the given date range.
+    Optional filters: city, state (filters by customer location)
 
     Expected response:
     [
         { "customer_id": "C001", "name": "Alice Johnson", "city": "Austin",
           "state": "TX", "total_orders": 14, "total_spent": 1240.50 }
     ]
-
-    TODO: implement this endpoint.
-    Hints:
-      - JOIN fact_orders with dim_customer on customer_id
-      - Only use dim_customer WHERE is_current = 1
-      - GROUP BY customer_id, name, addr_city, addr_state
-      - ORDER BY total_spent DESC, LIMIT 20
     """
     conn = get_connection()
 
-    # ── YOUR CODE HERE ────────────────────────────────────────────────────────
-    # JOIN fact_orders with dim_customer to get customer details
-    # IMPORTANT: Only use is_current = 1 to get the latest customer record (SCD Type 2)
-    # Aggregate by customer to calculate total orders and spending
-    # Only include delivered/shipped orders, filter by date range
-    # Return top 20 customers by total spend
-    results = execute_query(conn, """
+    # Build dynamic query based on filters
+    where_clauses = [
+        "f.order_date BETWEEN ? AND ?",
+        "f.status IN ('delivered', 'shipped')",
+        "c.is_current = 1"
+    ]
+    params = [start, end]
+
+    # Add city/state filtering if provided
+    if city:
+        where_clauses.append("c.addr_city = ?")
+        params.append(city)
+    if state:
+        where_clauses.append("c.addr_state = ?")
+        params.append(state)
+
+    query = """
         SELECT
             c.customer_id,
             c.name,
@@ -298,13 +327,13 @@ def get_customers(start: str = "2022-01-01", end: str = "2022-12-31"):
             SUM(f.amount) AS total_spent
         FROM fact_orders f
         JOIN dim_customer c ON f.customer_id = c.customer_id
-        WHERE f.order_date BETWEEN ? AND ?
-          AND f.status IN ('delivered', 'shipped')
-          AND c.is_current = 1
+        WHERE """ + " AND ".join(where_clauses) + """
         GROUP BY c.customer_id, c.name, c.addr_city, c.addr_state
         ORDER BY total_spent DESC
         LIMIT 20
-    """, (start, end))
+    """
+
+    results = execute_query(conn, query, tuple(params))
 
     # Format the results with proper rounding for total_spent
     return [
