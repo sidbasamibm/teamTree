@@ -5,6 +5,7 @@ import { DateRangeProvider } from './utils/DateRangeContext';
 import OrdersView   from './pages/OrdersView';
 import ProductsView from './pages/ProductsView';
 import CustomersView from './pages/CustomersView';
+import ChatWidget from './components/ChatWidget';
 import './App.css';
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/customers" element={<CustomersView />} />
           <Route path="*"          element={<Navigate to="/orders" replace />} />
         </Routes>
+        <ChatWidget />
       </BrowserRouter>
       </DateRangeProvider>
     </ThemeProvider>
