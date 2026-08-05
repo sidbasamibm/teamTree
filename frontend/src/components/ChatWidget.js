@@ -1,6 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../utils/ThemeContext';
 
+const MinimizeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="18" height="18" fill="#4DB6AC">
+    <path d="M30.745,31.255l-9.385-9.386V30h-0.72v-9.36H30v0.721h-8.131l9.386,9.385L30.745,31.255z M1.254,31.255
+      l-0.509-0.51l9.385-9.385H2v-0.72h9.36V30h-0.72v-8.131L1.254,31.255z M30,11.36h-9.36V2h0.721v8.131l9.385-9.385l0.51,0.509
+      l-9.386,9.386H30V11.36z M11.36,11.36H2v-0.72h8.131L0.746,1.254l0.509-0.509l9.386,9.385V2h0.72v9.36H11.36z"/>
+    <rect style={{ fill: 'none' }} width="32" height="32"/>
+  </svg>
+);
+
+const MaximizeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="18" height="18" fill="#4DB6AC">
+    <path d="M31.36,31.36H22v-0.72h8.131l-9.386-9.385l0.51-0.51l9.385,9.386V22h0.721v9.36H31.36z M10,31.36H0.64V22
+      h0.72v8.131l9.386-9.386l0.509,0.51L1.869,30.64H10V31.36z M21.255,11.254l-0.51-0.509l9.386-9.386H22V0.64h9.36V10h-0.72V1.869
+      L21.255,11.254z M10.746,11.254L1.36,1.869V10H0.64V0.64H10v0.72H1.869l9.385,9.386L10.746,11.254z"/>
+    <rect style={{ fill: 'none' }} width="32" height="32"/>
+  </svg>
+);
+
 const QAIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"
        width="24" height="24" fill="currentColor">
@@ -21,36 +39,47 @@ const QAIcon = () => (
 );
 
 const RESPONSES = {
-  default: "I'm the NovaCart assistant. Try asking about orders, revenue, products, or customers.",
-  hello:   "Hi there! How can I help you with the NovaCart dashboard today?",
-  orders:  "The Orders view shows monthly revenue and order volume. Use the date range filters at the top to narrow the data.",
-  revenue: "Revenue is calculated from orders with status 'delivered' or 'shipped'. Check the Orders view for monthly breakdowns.",
-  products:"The Products view shows the top 10 products by revenue including units sold and category.",
-  customers:"The Customers view shows the top 20 customers by total spend. You can sort by any column.",
-  cities:  "The Orders view includes a cities chart showing revenue broken down by city and state.",
-  help:    "You can ask me about: orders, revenue, products, customers, or cities.",
+  default:   { text: "I'm the NovaCart assistant. Try asking about orders, revenue, products, or customers." },
+  hello:     { text: "Hi there! How can I help you with the NovaCart dashboard today?" },
+  orders:    { text: "The Orders view shows monthly revenue and order volume. Use the date range filters at the top to narrow the data." },
+  revenue:   { text: "Revenue is calculated from orders with status 'delivered' or 'shipped'. Check the Orders view for monthly breakdowns." },
+  products:  { text: "The Products view shows the top 10 products by revenue including units sold and category." },
+  customers: { text: "The Customers view shows the top 20 customers by total spend. You can sort by any column." },
+  cities:    { text: "The Orders view includes a cities chart showing revenue broken down by city and state." },
+  help:      { text: "You can ask me about: orders, revenue, products, customers, or cities." },
 };
 
+// When a response has hasChart: true, the widget will auto-expand to the large size.
+// Future: populate msg.chart with a Recharts component to render inside the bubble.
 function getBotReply(text) {
   const lower = text.toLowerCase();
-  if (lower.match(/\bhello\b|\bhi\b|\bhey\b/))   return RESPONSES.hello;
-  if (lower.includes('order'))                     return RESPONSES.orders;
-  if (lower.includes('revenue') || lower.includes('money') || lower.includes('sales')) return RESPONSES.revenue;
-  if (lower.includes('product'))                   return RESPONSES.products;
-  if (lower.includes('customer'))                  return RESPONSES.customers;
-  if (lower.includes('city') || lower.includes('cities') || lower.includes('location')) return RESPONSES.cities;
-  if (lower.includes('help'))                      return RESPONSES.help;
+  if (lower.match(/\bhello\b|\bhi\b|\bhey\b/))                                          return RESPONSES.hello;
+  if (lower.includes('order'))                                                            return RESPONSES.orders;
+  if (lower.includes('revenue') || lower.includes('money') || lower.includes('sales'))   return RESPONSES.revenue;
+  if (lower.includes('product'))                                                          return RESPONSES.products;
+  if (lower.includes('customer'))                                                         return RESPONSES.customers;
+  if (lower.includes('city') || lower.includes('cities') || lower.includes('location'))  return RESPONSES.cities;
+  if (lower.includes('help'))                                                             return RESPONSES.help;
   return RESPONSES.default;
 }
 
+// Size config — normal vs expanded
+const SIZES = {
+  normal:   { width: 320, msgMaxHeight: 300, msgMinHeight: 200 },
+  expanded: { width: 520, msgMaxHeight: 500, msgMinHeight: 300 },
+};
+
 export default function ChatWidget() {
   const { dark } = useTheme();
-  const [open, setOpen]     = useState(false);
-  const [input, setInput]   = useState('');
+  const [open, setOpen]         = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [input, setInput]       = useState('');
   const [messages, setMessages] = useState([
-    { from: 'bot', text: 'Hi! I\'m the NovaCart assistant. Ask me anything about the dashboard.' }
+    { from: 'bot', text: "Hi! I'm the NovaCart assistant. Ask me anything about the dashboard." }
   ]);
   const bottomRef = useRef(null);
+
+  const size = expanded ? SIZES.expanded : SIZES.normal;
 
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -59,9 +88,12 @@ export default function ChatWidget() {
   function send() {
     const text = input.trim();
     if (!text) return;
-    const userMsg  = { from: 'user', text };
-    const botMsg   = { from: 'bot',  text: getBotReply(text) };
+    const reply = getBotReply(text);
+    const userMsg = { from: 'user', text };
+    const botMsg  = { from: 'bot',  text: reply.text, chart: reply.chart || null };
     setMessages(prev => [...prev, userMsg, botMsg]);
+    // Auto-expand if the response includes a chart
+    if (reply.hasChart) setExpanded(true);
     setInput('');
   }
 
@@ -91,32 +123,75 @@ export default function ChatWidget() {
         <QAIcon />
       </button>
 
+      {/* Backdrop when expanded */}
+      {open && expanded && (
+        <div
+          onClick={() => setExpanded(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 199,
+            background: 'rgba(0,0,0,0.4)',
+          }}
+        />
+      )}
+
       {/* Chat box */}
       {open && (
         <div style={{
-          position: 'fixed', bottom: 92, right: 28, zIndex: 200,
-          width: 320, borderRadius: 12,
+          position: 'fixed', zIndex: 200,
+          ...(expanded ? {
+            top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 600, maxHeight: '80vh',
+          } : {
+            bottom: 92, right: 28,
+            width: size.width,
+          }),
+          borderRadius: 12,
           background: bg, border: `1px solid ${border}`,
           boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          transition: 'width 0.25s ease',
         }}>
+
           {/* Header */}
           <div style={{
             background: '#0D2B4E', padding: '10px 16px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexShrink: 0,
           }}>
             <span style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>NovaCart Assistant</span>
-            <button onClick={() => setOpen(false)} style={{
-              background: 'none', border: 'none', color: '#B0BEC5',
-              cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0,
-            }}>✕</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Expand / minimize toggle */}
+              <button
+                onClick={() => setExpanded(e => !e)}
+                title={expanded ? 'Minimize' : 'Expand'}
+                style={{
+                  background: 'none', border: 'none', color: '#B0BEC5',
+                  cursor: 'pointer', lineHeight: 1, padding: 0,
+                  display: 'flex', alignItems: 'center',
+                }}>
+                {expanded ? <MinimizeIcon /> : <MaximizeIcon />}
+              </button>
+              {/* Close */}
+              <button
+                onClick={() => setOpen(false)}
+                title="Close"
+                style={{
+                  background: 'none', border: 'none', color: '#B0BEC5',
+                  cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0,
+                }}>
+                ✕
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
           <div style={{
             flex: 1, overflowY: 'auto', padding: '12px 14px',
             display: 'flex', flexDirection: 'column', gap: 8,
-            maxHeight: 300, minHeight: 200, background: mutedBg,
+            maxHeight: expanded ? '60vh' : size.msgMaxHeight,
+            minHeight: size.msgMinHeight,
+            background: mutedBg,
           }}>
             {messages.map((msg, i) => (
               <div key={i} style={{
@@ -129,6 +204,10 @@ export default function ChatWidget() {
                 border: msg.from === 'bot' ? `1px solid ${border}` : 'none',
               }}>
                 {msg.text}
+                {/* Chart placeholder — populated in future when bot returns chart data */}
+                {msg.chart && (
+                  <div style={{ marginTop: 10 }}>{msg.chart}</div>
+                )}
               </div>
             ))}
             <div ref={bottomRef} />
@@ -137,7 +216,7 @@ export default function ChatWidget() {
           {/* Input */}
           <div style={{
             display: 'flex', borderTop: `1px solid ${border}`,
-            background: bg, padding: '8px 10px', gap: 8,
+            background: bg, padding: '8px 10px', gap: 8, flexShrink: 0,
           }}>
             <input
               value={input}
