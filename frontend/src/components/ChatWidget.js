@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../utils/ThemeContext';
+import DynamicChart from './DynamicChart';
 import addDocumentIcon from './add--document.svg';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 
 const MinimizeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="18" height="18" fill="#4DB6AC">
@@ -39,30 +42,7 @@ const QAIcon = () => (
   </svg>
 );
 
-const RESPONSES = {
-  default:   { text: "I'm the NovaCart assistant. Try asking about orders, revenue, products, or customers." },
-  hello:     { text: "Hi there! How can I help you with the NovaCart dashboard today?" },
-  orders:    { text: "The Orders view shows monthly revenue and order volume. Use the date range filters at the top to narrow the data." },
-  revenue:   { text: "Revenue is calculated from orders with status 'delivered' or 'shipped'. Check the Orders view for monthly breakdowns." },
-  products:  { text: "The Products view shows the top 10 products by revenue including units sold and category." },
-  customers: { text: "The Customers view shows the top 20 customers by total spend. You can sort by any column." },
-  cities:    { text: "The Orders view includes a cities chart showing revenue broken down by city and state." },
-  help:      { text: "You can ask me about: orders, revenue, products, customers, or cities." },
-};
-
-// When a response has hasChart: true, the widget will auto-expand to the large size.
-// Future: populate msg.chart with a Recharts component to render inside the bubble.
-function getBotReply(text) {
-  const lower = text.toLowerCase();
-  if (lower.match(/\bhello\b|\bhi\b|\bhey\b/))                                          return RESPONSES.hello;
-  if (lower.includes('order'))                                                            return RESPONSES.orders;
-  if (lower.includes('revenue') || lower.includes('money') || lower.includes('sales'))   return RESPONSES.revenue;
-  if (lower.includes('product'))                                                          return RESPONSES.products;
-  if (lower.includes('customer'))                                                         return RESPONSES.customers;
-  if (lower.includes('city') || lower.includes('cities') || lower.includes('location'))  return RESPONSES.cities;
-  if (lower.includes('help'))                                                             return RESPONSES.help;
-  return RESPONSES.default;
-}
+// Removed old static responses - now using AI backend
 
 // Size config — normal vs expanded
 const SIZES = {
@@ -76,8 +56,10 @@ export default function ChatWidget() {
   const [expanded, setExpanded] = useState(false);
   const [input, setInput]       = useState('');
   const [messages, setMessages] = useState([
-    { from: 'bot', text: "Hi! I'm the NovaCart assistant. Ask me anything about the dashboard." }
+    { from: 'bot', text: "Hi! I'm the NovaCart AI assistant. Ask me anything about orders, revenue, products, or customers!" }
   ]);
+  const [conversation, setConversation] = useState([]);
+  const [loading, setLoading] = useState(false);
   const bottomRef  = useRef(null);
   const fileRef    = useRef(null);
 
@@ -87,16 +69,65 @@ export default function ChatWidget() {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open]);
 
-  function send() {
+  async function send() {
     const text = input.trim();
-    if (!text) return;
-    const reply = getBotReply(text);
+    if (!text || loading) return;
+
+    // Add user message immediately
     const userMsg = { from: 'user', text };
-    const botMsg  = { from: 'bot',  text: reply.text, chart: reply.chart || null };
-    setMessages(prev => [...prev, userMsg, botMsg]);
-    // Auto-expand if the response includes a chart
-    if (reply.hasChart) setExpanded(true);
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
+    setLoading(true);
+
+    try {
+      // Call AI backend
+      const response = await fetch(`${BACKEND_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          conversation: conversation
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Add bot response
+      const botMsg = {
+        from: 'bot',
+        text: result.message || 'I apologize, but I could not process that request.',
+        data: result.data,
+        chartType: result.chart_type,
+        error: result.error
+      };
+
+      setMessages(prev => [...prev, botMsg]);
+
+      // Update conversation history
+      if (result.conversation) {
+        setConversation(result.conversation);
+      }
+
+      // Auto-expand if response has chart data
+      if (result.data && result.chart_type) {
+        setExpanded(true);
+      }
+
+    } catch (error) {
+      // Add error message
+      const errorMsg = {
+        from: 'bot',
+        text: `Sorry, I encountered an error: ${error.message}. Make sure the backend is running and Ollama is started.`,
+        error: true
+      };
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleKey(e) {
@@ -208,7 +239,7 @@ export default function ChatWidget() {
             {messages.map((msg, i) => (
               <div key={i} style={{
                 alignSelf: msg.from === 'user' ? 'flex-end' : 'flex-start',
-                maxWidth: '80%',
+                maxWidth: msg.data ? '95%' : '80%',
                 background: msg.from === 'user' ? '#4DB6AC' : (dark ? '#1E2A3A' : '#ffffff'),
                 color: msg.from === 'user' ? '#fff' : textCol,
                 borderRadius: msg.from === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
@@ -216,12 +247,47 @@ export default function ChatWidget() {
                 border: msg.from === 'bot' ? `1px solid ${border}` : 'none',
               }}>
                 {msg.text}
-                {/* Chart placeholder — populated in future when bot returns chart data */}
-                {msg.chart && (
-                  <div style={{ marginTop: 10 }}>{msg.chart}</div>
+
+                {/* Render dynamic chart if data is present */}
+                {msg.data && msg.chartType && (
+                  <DynamicChart data={msg.data} chartType={msg.chartType} />
+                )}
+
+                {/* Show error indicator */}
+                {msg.error && (
+                  <div style={{
+                    marginTop: 8,
+                    padding: 6,
+                    background: 'rgba(255,100,100,0.1)',
+                    borderRadius: 4,
+                    fontSize: 11,
+                    color: '#ff6b6b'
+                  }}>
+                    ⚠️ Error occurred
+                  </div>
                 )}
               </div>
             ))}
+
+            {/* Loading indicator */}
+            {loading && (
+              <div style={{
+                alignSelf: 'flex-start',
+                maxWidth: '80%',
+                background: dark ? '#1E2A3A' : '#ffffff',
+                color: textCol,
+                borderRadius: '12px 12px 12px 2px',
+                padding: '8px 12px',
+                fontSize: 13,
+                border: `1px solid ${border}`,
+              }}>
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  <span>Thinking</span>
+                  <span className="loading-dots">...</span>
+                </div>
+              </div>
+            )}
+
             <div ref={bottomRef} />
           </div>
 
@@ -261,10 +327,16 @@ export default function ChatWidget() {
                 background: mutedBg, color: textCol, outline: 'none',
               }}
             />
-            <button onClick={send} style={{
-              background: '#4DB6AC', border: 'none', borderRadius: 6,
-              color: '#fff', padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-            }}>Send</button>
+            <button onClick={send} disabled={loading} style={{
+              background: loading ? '#888' : '#4DB6AC',
+              border: 'none', borderRadius: 6,
+              color: '#fff', padding: '6px 12px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: 13, fontWeight: 600,
+              opacity: loading ? 0.6 : 1,
+            }}>
+              {loading ? '...' : 'Send'}
+            </button>
           </div>
         </div>
       )}
