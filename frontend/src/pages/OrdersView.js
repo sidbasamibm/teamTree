@@ -145,9 +145,6 @@ export default function OrdersView() {
             <div className="card" style={{ marginBottom: 20 }}>
               <div className="section-title" style={{ marginBottom: 16 }}>
                 Monthly Revenue
-                <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 12 }}>
-                  Click a bar for detailed insights
-                </span>
               </div>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={orders} margin={{ top: 4, right: 16, left: 16, bottom: 4 }}>
@@ -169,9 +166,6 @@ export default function OrdersView() {
             <div className="card">
               <div className="section-title" style={{ marginBottom: 16 }}>
                 Revenue by City
-                <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 400, marginLeft: 12 }}>
-                  Click a bar for detailed insights
-                </span>
               </div>
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={cities.slice(0, 10)} layout="vertical" margin={{ top: 4, right: 32, left: 80, bottom: 4 }}>
