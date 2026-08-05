@@ -114,9 +114,28 @@ export default function ProductsView() {
                     <tr
                       key={p.product_id}
                       onClick={() => handleViewInsights(p.product_id)}
-                      style={{ background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)', cursor: insightsLoading ? 'wait' : 'pointer', transition: 'background 0.15s' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-light)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)'; }}
+                      style={{ background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)', cursor: insightsLoading ? 'wait' : 'pointer', transition: 'background 0.15s, transform 0.15s, box-shadow 0.15s', transform: 'scale(1)' }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'var(--accent-light)';
+                        e.currentTarget.style.transform = 'scale(1.10, 1.50)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,191,165,0.15)';
+                        e.currentTarget.style.zIndex = '1';
+                        e.currentTarget.style.position = 'relative';
+                        Array.from(e.currentTarget.cells).forEach(td => {
+                          td.style.transition = 'transform 0.15s';
+                          td.style.transform = 'scale(0.909, 0.667)';
+                        });
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)';
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = 'none';
+                        e.currentTarget.style.zIndex = 'auto';
+                        e.currentTarget.style.position = 'static';
+                        Array.from(e.currentTarget.cells).forEach(td => {
+                          td.style.transform = 'scale(1)';
+                        });
+                      }}
                     >
                       <td style={TD}>{p.name}</td>
                       <td style={TD}>{p.category}</td>
