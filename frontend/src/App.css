@@ -41,7 +41,19 @@ body {
   line-height: 1.5;
 }
 
-.page { max-width: 1280px; margin: 0 auto; padding: 24px; }
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+@keyframes page-fade-out {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.page {
+  max-width: 1280px; margin: 0 auto; padding: 24px;
+  animation: page-fade-in 0.5s ease-out both;
+  animation: page-fade-out 0.5s ease-out both;
+}
 @media (max-width: 600px) { .page { padding: 12px; } }
 
 .card {
