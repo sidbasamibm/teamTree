@@ -1,23 +1,13 @@
-/**
- * ProductsView.js — Product Performance page
- *
- * This page shows:
- *   - A bar chart of top 10 products by revenue
- *   - A table with product name, category, units sold, and revenue
- *   - A date range filter
- *
- * The data fetching is already wired up.
- * Your job: implement the UI.
- */
-
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Navbar from '../components/Navbar';
+import ErrorBanner from '../components/ErrorBanner';
+import EmptyState from '../components/EmptyState';
 import InsightsModal from '../components/InsightsModal';
 import { getProducts, getProductInsights } from '../utils/api';
 import { useDateRange } from '../utils/DateRangeContext';
+import { exportCsv } from '../utils/exportCsv';
 
-// Format currency helper
 function formatCurrency(value) {
   if (!value) return '$0';
   if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
@@ -25,12 +15,14 @@ function formatCurrency(value) {
   return `$${value.toFixed(2)}`;
 }
 
+const TD = { padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' };
+
 export default function ProductsView() {
   const { startDate, setStartDate, endDate, setEndDate } = useDateRange();
-  const [products,  setProducts]  = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState(null);
-  const [insightsData, setInsightsData] = useState(null);
+  const [products,        setProducts]        = useState([]);
+  const [loading,         setLoading]         = useState(true);
+  const [error,           setError]           = useState(null);
+  const [insightsData,    setInsightsData]    = useState(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
 
   useEffect(() => { loadData(); }, []);
@@ -39,8 +31,7 @@ export default function ProductsView() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getProducts(startDate, endDate);
-      setProducts(data);
+      setProducts(await getProducts(startDate, endDate));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -51,17 +42,12 @@ export default function ProductsView() {
   async function handleViewInsights(productId) {
     setInsightsLoading(true);
     try {
-      const data = await getProductInsights(productId, startDate, endDate);
-      setInsightsData(data);
+      setInsightsData(await getProductInsights(productId, startDate, endDate));
     } catch (err) {
       alert(`Failed to load insights: ${err.message}`);
     } finally {
       setInsightsLoading(false);
     }
-  }
-
-  function closeInsights() {
-    setInsightsData(null);
   }
 
   return (
@@ -75,32 +61,18 @@ export default function ProductsView() {
           <label>To</label>
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
           <button className="btn-apply" onClick={loadData}>Apply</button>
+          <button className="btn-download" style={{ marginLeft: 'auto' }} onClick={() => exportCsv(products, `products_${startDate}_${endDate}`)} disabled={products.length === 0}>
+            ⬇ Download Products
+          </button>
         </div>
 
-        {error && (
-          <div style={{ color: '#000D1F', padding: 16, background: '#FFCDD2', borderRadius: 8, marginBottom: 16, borderLeft: '4px solid #FF6B6B' }}>
-            Error: {error}
-          </div>
-        )}
-
+        <ErrorBanner message={error} />
         {loading && <div className="loading">Loading products data…</div>}
-
-        {!loading && !error && products.length === 0 && (
-          <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 8, border: '1px solid var(--border)' }}>
-            No data found for the selected date range.
-          </div>
-        )}
+        {!loading && !error && products.length === 0 && <EmptyState />}
 
         {!loading && !error && products.length > 0 && (
           <div className="grid-2">
 
-            {/*
-              STEP 1 — Top products bar chart
-              products is: [{ product_id, name, category, units_sold, revenue }]
-              Use a horizontal BarChart (layout="vertical").
-              XAxis type="number", YAxis type="category" dataKey="name"
-              Hint: truncate long product names to 20 chars
-            */}
             <div className="card">
               <div className="section-title" style={{ marginBottom: 16 }}>Top 10 Products by Revenue</div>
               <ResponsiveContainer width="100%" height={300}>
@@ -114,7 +86,7 @@ export default function ProductsView() {
                 >
                   <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 12 }} />
                   <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(v) => formatCurrency(v)} />
+                  <Tooltip formatter={v => formatCurrency(v)} />
                   <Bar dataKey="revenue" fill="var(--accent)" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -131,17 +103,7 @@ export default function ProductsView() {
                       { label: 'Units Sold', align: 'right' },
                       { label: 'Revenue',    align: 'right' },
                     ].map(({ label, align }) => (
-                      <th
-                        key={label}
-                        style={{
-                          padding: '10px 12px',
-                          textAlign: align,
-                          background: 'var(--bg-primary)',
-                          borderBottom: '2px solid var(--border)',
-                          color: 'var(--text-primary)',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
+                      <th key={label} style={{ ...TD, textAlign: align, background: 'var(--bg-primary)', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' }}>
                         {label}
                       </th>
                     ))}
@@ -152,31 +114,14 @@ export default function ProductsView() {
                     <tr
                       key={p.product_id}
                       onClick={() => handleViewInsights(p.product_id)}
-                      style={{
-                        background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)',
-                        cursor: insightsLoading ? 'wait' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        transform: 'scale(1)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'var(--accent-light)';
-                        e.currentTarget.style.transform = 'scale(1.02)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 191, 165, 0.15)';
-                        e.currentTarget.style.position = 'relative';
-                        e.currentTarget.style.zIndex = '10';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)';
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = 'none';
-                        e.currentTarget.style.position = 'static';
-                        e.currentTarget.style.zIndex = 'auto';
-                      }}
+                      style={{ background: i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)', cursor: insightsLoading ? 'wait' : 'pointer', transition: 'background 0.15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-light)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-primary)'; }}
                     >
-                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)' }}>{p.name}</td>
-                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)' }}>{p.category}</td>
-                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>{p.units_sold.toLocaleString()}</td>
-                      <td style={{ padding: '9px 12px', borderBottom: '1px solid var(--border)', textAlign: 'right' }}>{formatCurrency(p.revenue)}</td>
+                      <td style={TD}>{p.name}</td>
+                      <td style={TD}>{p.category}</td>
+                      <td style={{ ...TD, textAlign: 'right' }}>{p.units_sold.toLocaleString()}</td>
+                      <td style={{ ...TD, textAlign: 'right' }}>{formatCurrency(p.revenue)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -187,12 +132,7 @@ export default function ProductsView() {
         )}
       </div>
 
-      <InsightsModal
-        isOpen={!!insightsData}
-        onClose={closeInsights}
-        data={insightsData}
-        type="product"
-      />
+      <InsightsModal isOpen={!!insightsData} onClose={() => setInsightsData(null)} data={insightsData} type="product" />
     </div>
   );
 }

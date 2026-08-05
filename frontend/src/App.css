@@ -1,19 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&display=swap');
 
+/* Colour tokens that never change with theme */
 :root {
+  --accent:  #00BFA5;
+  --blue:    #2D4EF5;
+  --salmon:  #FF6B6B;
+  --mint:    #A8E6CF;
+  --radius:  10px;
+
+  /* Light theme */
   --bg-primary:    #C8E6F5;
   --bg-card:       #FFFFFF;
   --text-primary:  #000D1F;
   --text-secondary:#000D1F;
   --text-muted:    #4A6080;
   --border:        #B0CCE0;
-  --accent:        #00BFA5;
   --accent-light:  #E0F7F4;
-  --blue:          #2D4EF5;
-  --salmon:        #FF6B6B;
-  --mint:          #A8E6CF;
   --shadow:        0 2px 12px rgba(0,13,31,0.08);
-  --radius:        10px;
 }
 
 [data-theme="dark"] {
@@ -23,11 +26,7 @@
   --text-secondary:#C8E6F5;
   --text-muted:    #A8E6CF;
   --border:        #2D4EF5;
-  --accent:        #00BFA5;
   --accent-light:  #0A3D36;
-  --blue:          #2D4EF5;
-  --salmon:        #FF6B6B;
-  --mint:          #A8E6CF;
   --shadow:        0 2px 12px rgba(0,0,0,0.4);
 }
 
@@ -90,5 +89,15 @@ body {
   border-radius: 6px; padding: 7px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
 }
 .btn-apply:hover { opacity: 0.85; }
+
+.btn-download {
+  background: transparent;
+  color: var(--blue);
+  border: 1px solid var(--blue);
+  border-radius: 6px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: inherit;
+}
+.btn-download:hover:not(:disabled) { background: var(--blue); color: #fff; }
+.btn-download:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .loading { display: flex; align-items: center; justify-content: center; height: 200px; color: var(--text-muted); font-size: 14px; }
