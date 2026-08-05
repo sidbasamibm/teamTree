@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import { useTheme } from '../utils/ThemeContext';
 import ErrorBanner from '../components/ErrorBanner';
 import EmptyState from '../components/EmptyState';
+import DateRangePicker from '../components/DateRangePicker';
 import { getSummary, getOrders, getCities } from '../utils/api';
 import { useDateRange } from '../utils/DateRangeContext';
 import { exportCsv } from '../utils/exportCsv';
@@ -22,14 +23,14 @@ export default function OrdersView() {
 
   useEffect(() => { loadData(); }, []);
 
-  async function loadData() {
+  async function loadData(start = startDate, end = endDate) {
     setLoading(true);
     setError(null);
     try {
       const [s, o, c] = await Promise.all([
-        getSummary(startDate, endDate),
-        getOrders(startDate, endDate),
-        getCities(startDate, endDate),
+        getSummary(start, end),
+        getOrders(start, end),
+        getCities(start, end),
       ]);
       setSummary(s);
       setOrders(o);
@@ -47,11 +48,7 @@ export default function OrdersView() {
       <div className="page">
 
         <div className="filter-bar">
-          <label>From</label>
-          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-          <label>To</label>
-          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-          <button className="btn-apply" onClick={loadData}>Apply</button>
+          <DateRangePicker onApply={loadData} />
           <span style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
             <button className="btn-download" onClick={() => exportCsv(orders, `orders_${startDate}_${endDate}`)} disabled={orders.length === 0}>
               ⬇ Monthly Orders
