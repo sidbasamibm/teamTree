@@ -157,7 +157,7 @@ export default function Navbar() {
               onMouseLeave={() => setHoveredNav(null)}
               style={{
                 background: highlight ? 'rgba(45,78,245,0.25)' : 'transparent',
-                border: `1px solid ${highlight ? '#2D4EF5' : 'transparent'}`,
+                border: `1px solid ${highlight ? '#051B3F' : 'transparent'}`,
                 color: '#C8E6F5', borderRadius: 6, padding: '4px 14px',
                 cursor: 'pointer', fontSize: 13, fontWeight: 500,
                 display: 'inline-flex', alignItems: 'center',
@@ -182,7 +182,7 @@ export default function Navbar() {
           onMouseLeave={() => setExportHovered(false)}
           style={{
             background: downloading ? 'rgba(45,78,245,0.3)' : exportHovered ? '#2D4EF5' : 'rgba(45,78,245,0.15)',
-            border: '1px solid #2D4EF5',
+            border: '1px solid #051B3F',
             color: exportHovered ? '#fff' : '#C8E6F5',
             borderRadius: 6, padding: '4px 12px',
             cursor: downloading ? 'wait' : 'pointer', fontSize: 13, fontWeight: 600,
@@ -199,7 +199,7 @@ export default function Navbar() {
             title="Settings"
             style={{
               background: settingsOpen ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)',
-              border: `1px solid ${settingsOpen ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.15)'}`,
+              border: `1px solid ${settingsOpen ? '#051B3F' : '#051B3F'}`,
               color: '#fff', borderRadius: 6, padding: '5px 10px',
               cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
               transition: 'background 0.15s, border 0.15s',
