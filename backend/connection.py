@@ -14,6 +14,8 @@ import os
 import sqlite3
 from pathlib import Path
 from dotenv import load_dotenv
+import snowflake.connector
+from cryptography.hazmat.primitives import serialization  # <-- ADD THIS TOO
 
 load_dotenv()
 
@@ -45,8 +47,6 @@ def get_snowflake_connection():
     When running inside SPCS: uses the OAuth token mounted at /snowflake/session/token.
     When running locally: uses keypair authentication from environment variables.
     """
-    import snowflake.connector
-    from cryptography.hazmat.primitives import serialization
 
     token_path = "/snowflake/session/token"
 
@@ -62,6 +62,27 @@ def get_snowflake_connection():
             schema=os.getenv("SNOWFLAKE_SCHEMA"),
             warehouse=os.getenv("SNOWFLAKE_WAREHOUSE"),
         )
+    
+    # AWS mode — keypair from environment variable
+    if os.getenv('SNOWFLAKE_PRIVATE_KEY_CONTENT'):
+       private_key = serialization.load_pem_private_key(
+           os.getenv('SNOWFLAKE_PRIVATE_KEY_CONTENT').encode(),
+           password=None
+       )
+       private_key_bytes = private_key.private_bytes(
+           encoding=serialization.Encoding.DER,
+           format=serialization.PrivateFormat.PKCS8,
+           encryption_algorithm=serialization.NoEncryption(),
+       )
+       return snowflake.connector.connect(
+           account=os.getenv('SNOWFLAKE_ACCOUNT'),
+           user=os.getenv('SNOWFLAKE_USER'),
+           private_key=private_key_bytes,
+           database=os.getenv('SNOWFLAKE_DATABASE'),
+           schema=os.getenv('SNOWFLAKE_SCHEMA'),
+           warehouse=os.getenv('SNOWFLAKE_WAREHOUSE'),
+       )
+
 
     # Local mode — keypair authentication
     private_key_path = os.getenv("SNOWFLAKE_PRIVATE_KEY_PATH")
@@ -121,6 +142,8 @@ def execute_query(conn, query: str, params: tuple = ()) -> list[dict]:
         list of dicts, one per row
     """
     if DATA_BACKEND == "snowflake":
+        # Convert SQLite-style ? placeholders to Snowflake-style %s
+        query = query.replace('?', '%s')
         cursor = conn.cursor(snowflake.connector.DictCursor)
         cursor.execute(query, params)
         rows = cursor.fetchall()
