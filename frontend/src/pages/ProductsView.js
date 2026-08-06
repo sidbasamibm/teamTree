@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import Navbar from '../components/Navbar';
 import { useTheme } from '../utils/ThemeContext';
+import { useCurrency } from '../utils/CurrencyContext';
 import ErrorBanner from '../components/ErrorBanner';
 import EmptyState from '../components/EmptyState';
 import InsightsModal from '../components/InsightsModal';
@@ -10,18 +11,12 @@ import { getProducts, getProductInsights } from '../utils/api';
 import { useDateRange } from '../utils/DateRangeContext';
 import { exportCsv } from '../utils/exportCsv';
 
-function formatCurrency(value) {
-  if (!value) return '$0';
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000)    return `$${(value / 1000).toFixed(0)}K`;
-  return `$${value.toFixed(2)}`;
-}
-
 const TD = { padding: '9px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' };
 
 export default function ProductsView() {
   const { startDate, setStartDate, endDate, setEndDate } = useDateRange();
   const { dark } = useTheme();
+  const { fmt, fmtShort, t } = useCurrency();
   const tickColor = dark ? '#C8E6F5' : '#4A6080';
   const [products,        setProducts]        = useState([]);
   const [loading,         setLoading]         = useState(true);
@@ -62,19 +57,19 @@ export default function ProductsView() {
         <div className="filter-bar">
           <DateRangePicker onApply={loadData} />
           <button className="btn-download" style={{ marginLeft: 'auto' }} onClick={() => exportCsv(products, `products_${startDate}_${endDate}`)} disabled={products.length === 0}>
-            ⬇ Download Products
+            {t.downloadProducts}
           </button>
         </div>
 
         <ErrorBanner message={error} />
-        {loading && <div className="loading">Loading products data…</div>}
+        {loading && <div className="loading">{t.loadingProducts}</div>}
         {!loading && !error && products.length === 0 && <EmptyState />}
 
         {!loading && !error && products.length > 0 && (
           <div className="grid-2">
 
             <div className="card">
-              <div className="section-title" style={{ marginBottom: 16 }}>Top 10 Products by Revenue</div>
+              <div className="section-title" style={{ marginBottom: 16 }}>{t.top10Products}</div>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
                   layout="vertical"
@@ -82,29 +77,29 @@ export default function ProductsView() {
                     .sort((a, b) => b.revenue - a.revenue)
                     .slice(0, 10)
                     .map(p => ({ ...p, name: p.name.length > 20 ? p.name.slice(0, 20) + '…' : p.name }))}
-                  margin={{ top: 0, right: 24, left: 8, bottom: 0 }}
+                  margin={{ top: 0, right: 80, left: 8, bottom: 0 }}
                 >
-                  <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 12, fill: tickColor }} />
+                  <XAxis type="number" tickFormatter={v => fmtShort(v)} tick={{ fontSize: 12, fill: tickColor }} />
                   <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12, fill: tickColor }} />
-                  <Tooltip formatter={v => formatCurrency(v)} />
+                  <Tooltip formatter={v => fmt(v)} />
                   <Bar dataKey="revenue" fill="var(--accent)" radius={[0, 4, 4, 0]}>
-                    <LabelList dataKey="revenue" position="right" formatter={formatCurrency} style={{ fontSize: 11, fill: tickColor, fontWeight: 600 }} />
+                    <LabelList dataKey="revenue" position="right" formatter={fmtShort} style={{ fontSize: 11, fill: tickColor, fontWeight: 600 }} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
             <div className="card">
-              <div className="section-title" style={{ marginBottom: 16 }}>Product Details</div>
+              <div className="section-title" style={{ marginBottom: 16 }}>{t.productDetails}</div>
               <div className="table-wrap">
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                 <thead>
                   <tr>
                     {[
-                      { label: 'Name',       align: 'left'               },
-                      { label: 'Category',   align: 'left',  hide: true  },
-                      { label: 'Units Sold', align: 'right'              },
-                      { label: 'Revenue',    align: 'right'              },
+                      { label: t.name,      align: 'left'               },
+                      { label: t.category,  align: 'left',  hide: true  },
+                      { label: t.unitsSold, align: 'right'              },
+                      { label: t.revenue,   align: 'right'              },
                     ].map(({ label, align, hide }) => (
                       <th key={label} className={hide ? 'col-hide-sm' : ''} style={{ ...TD, textAlign: align, background: 'var(--bg-primary)', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' }}>
                         {label}
@@ -141,7 +136,7 @@ export default function ProductsView() {
                       <td style={TD}>{p.name}</td>
                       <td style={TD} className="col-hide-sm">{p.category}</td>
                       <td style={{ ...TD, textAlign: 'right' }}>{p.units_sold.toLocaleString()}</td>
-                      <td style={{ ...TD, textAlign: 'right' }}>{formatCurrency(p.revenue)}</td>
+                      <td style={{ ...TD, textAlign: 'right' }}>{fmt(p.revenue)}</td>
                     </tr>
                   ))}
                 </tbody>

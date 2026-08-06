@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts';
 import Navbar from '../components/Navbar';
 import { useTheme } from '../utils/ThemeContext';
+import { useCurrency } from '../utils/CurrencyContext';
 import ErrorBanner from '../components/ErrorBanner';
 import EmptyState from '../components/EmptyState';
 import DateRangePicker from '../components/DateRangePicker';
@@ -11,12 +12,10 @@ import { getSummary, getOrders, getCities, getProducts, getCustomers } from '../
 import { useDateRange } from '../utils/DateRangeContext';
 import { exportCsv } from '../utils/exportCsv';
 
-const fmtCurrency = v => `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-const fmtShort = v => v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(1)}m` : `$${Math.round(v / 1000)}k`;
-
 export default function OrdersView() {
   const { startDate, setStartDate, endDate, setEndDate } = useDateRange();
   const { dark } = useTheme();
+  const { fmt, fmtShort, t } = useCurrency();
   const tickColor = dark ? '#C8E6F5' : '#4A6080';
   const [summary, setSummary] = useState(null);
   const [orders,  setOrders]  = useState([]);
@@ -53,12 +52,10 @@ export default function OrdersView() {
 
     setInsightsLoading(true);
     try {
-      // Parse the month string (e.g., "2022-01") to get start and end dates
       const [year, month] = data.month.split('-');
       const monthStart = `${year}-${month}-01`;
       const monthEnd = new Date(parseInt(year), parseInt(month), 0).toISOString().split('T')[0];
 
-      // Load all data for this month
       const [summary, products, customers, cities] = await Promise.all([
         getSummary(monthStart, monthEnd),
         getProducts(monthStart, monthEnd),
@@ -85,7 +82,6 @@ export default function OrdersView() {
 
     setInsightsLoading(true);
     try {
-      // Load all data for this city
       const [summary, products, customers] = await Promise.all([
         getSummary(startDate, endDate, data.city, data.state),
         getProducts(startDate, endDate, data.city, data.state),
@@ -114,45 +110,45 @@ export default function OrdersView() {
           <DateRangePicker onApply={loadData} />
           <span style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
             <button className="btn-download" onClick={() => exportCsv(orders, `orders_${startDate}_${endDate}`)} disabled={orders.length === 0}>
-              ⬇ Monthly Orders
+              {t.monthlyOrders}
             </button>
             <button className="btn-download" onClick={() => exportCsv(cities, `cities_${startDate}_${endDate}`)} disabled={cities.length === 0}>
-              ⬇ Cities
+              {t.cities}
             </button>
           </span>
         </div>
 
         <ErrorBanner message={error} />
-        {loading && <div className="loading">Loading orders data…</div>}
+        {loading && <div className="loading">{t.loadingOrders}</div>}
         {!loading && !error && orders.length === 0 && <EmptyState />}
 
         {!loading && !error && orders.length > 0 && (
           <>
             <div className="stat-row">
               <div className="stat-box">
-                <div className="label">Total Revenue</div>
-                <div className="value">{summary ? fmtCurrency(summary.total_revenue) : '—'}</div>
+                <div className="label">{t.totalRevenue}</div>
+                <div className="value">{summary ? fmt(summary.total_revenue) : '—'}</div>
               </div>
               <div className="stat-box">
-                <div className="label">Total Orders</div>
+                <div className="label">{t.totalOrders}</div>
                 <div className="value">{summary ? Number(summary.total_orders).toLocaleString() : '—'}</div>
               </div>
               <div className="stat-box">
-                <div className="label">Unique Customers</div>
+                <div className="label">{t.uniqueCustomers}</div>
                 <div className="value">{summary ? Number(summary.unique_customers).toLocaleString() : '—'}</div>
               </div>
             </div>
 
             <div className="card" style={{ marginBottom: 20 }}>
               <div className="section-title" style={{ marginBottom: 16 }}>
-                Monthly Revenue
+                {t.monthlyRevenue}
               </div>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={orders} margin={{ top: 4, right: 16, left: 16, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="month_name" tick={{ fontSize: 12, fill: tickColor }} />
-                  <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12, fill: tickColor }} />
-                  <Tooltip formatter={v => [fmtCurrency(v), 'Revenue']} />
+                  <YAxis tickFormatter={v => fmtShort(v)} tick={{ fontSize: 12, fill: tickColor }} />
+                  <Tooltip formatter={v => [fmt(v), t.revenue]} />
                   <Bar
                     dataKey="revenue"
                     fill="#2D4EF5"
@@ -168,14 +164,14 @@ export default function OrdersView() {
 
             <div className="card">
               <div className="section-title" style={{ marginBottom: 16 }}>
-                Revenue by City
+                {t.revenueByCity}
               </div>
               <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={cities.slice(0, 10)} layout="vertical" margin={{ top: 4, right: 32, left: 80, bottom: 4 }}>
+                <BarChart data={cities.slice(0, 10)} layout="vertical" margin={{ top: 4, right: 80, left: 80, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12, fill: tickColor }} />
+                  <XAxis type="number" tickFormatter={v => fmtShort(v)} tick={{ fontSize: 12, fill: tickColor }} />
                   <YAxis type="category" dataKey="city" tick={{ fontSize: 12, fill: tickColor }} width={76} />
-                  <Tooltip formatter={v => [fmtCurrency(v), 'Revenue']} />
+                  <Tooltip formatter={v => [fmt(v), t.revenue]} />
                   <Bar
                     dataKey="revenue"
                     fill="#00BFA5"

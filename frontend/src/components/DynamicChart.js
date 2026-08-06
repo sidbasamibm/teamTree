@@ -1,16 +1,11 @@
 import React from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useTheme } from '../utils/ThemeContext';
-
-const formatCurrency = (value) => {
-  if (!value) return '$0';
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
-  return `$${value.toFixed(2)}`;
-};
+import { useCurrency } from '../utils/CurrencyContext';
 
 export default function DynamicChart({ data, chartType }) {
   const { dark } = useTheme();
+  const { fmt: formatCurrency } = useCurrency();
   const tickColor = dark ? '#C8E6F5' : '#4A6080';
 
   if (!data || !chartType) return null;

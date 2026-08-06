@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../utils/ThemeContext';
 import { useDateRange } from '../utils/DateRangeContext';
+import { useCurrency, CURRENCIES } from '../utils/CurrencyContext';
 import { getSummary, getOrders, getCities, getProducts, getCustomers } from '../utils/api';
 import { exportCsvCombined } from '../utils/exportCsv';
 import ServiceStatus from './ServiceStatus';
@@ -41,21 +42,49 @@ const ProductIcon = () => (
   </svg>
 );
 
-const LINKS = [
-  { label: <><OrdersIcon /><span className="nav-label">Orders</span></>,     path: '/orders'    },
-  { label: <><ProductIcon /><span className="nav-label">Products</span></>,  path: '/products'  },
-  { label: <><CustomersIcon /><span className="nav-label">Customers</span></>, path: '/customers' },
-];
-
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toggle, dark } = useTheme();
   const { startDate, endDate } = useDateRange();
-  const [downloading,   setDownloading]   = useState(false);
-  const [exportHovered, setExportHovered] = useState(false);
-  const [themeHovered,  setThemeHovered]  = useState(false);
-  const [hoveredNav,    setHoveredNav]    = useState(null);
+  const { currency, setCurrency, language, setLanguage, languages, t } = useCurrency();
+  const [downloading,     setDownloading]     = useState(false);
+  const [exportHovered,   setExportHovered]   = useState(false);
+  const [themeHovered,    setThemeHovered]    = useState(false);
+  const [hoveredNav,      setHoveredNav]      = useState(null);
+  const [currencyOpen,    setCurrencyOpen]    = useState(false);
+  const [currencySearch,  setCurrencySearch]  = useState('');
+  const [langOpen,        setLangOpen]        = useState(false);
+  const currencyRef = useRef(null);
+  const langRef     = useRef(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    function handleOutside(e) {
+      if (currencyRef.current && !currencyRef.current.contains(e.target)) {
+        setCurrencyOpen(false);
+        setCurrencySearch('');
+      }
+      if (langRef.current && !langRef.current.contains(e.target)) {
+        setLangOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, []);
+
+  const currentLangLabel = languages.find(l => l.key === language)?.label ?? 'EN';
+
+  const LINKS = [
+    { label: <><OrdersIcon /><span className="nav-label">{t.orders}</span></>,     path: '/orders'    },
+    { label: <><ProductIcon /><span className="nav-label">{t.products}</span></>,  path: '/products'  },
+    { label: <><CustomersIcon /><span className="nav-label">{t.customers}</span></>, path: '/customers' },
+  ];
+
+  const filteredCurrencies = CURRENCIES.filter(c =>
+    c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
+    c.name.toLowerCase().includes(currencySearch.toLowerCase())
+  );
 
   async function downloadAll() {
     setDownloading(true);
@@ -118,8 +147,114 @@ export default function Navbar() {
       </div>
 
       {/* Right-side controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <ServiceStatus />
+
+        {/* Language selector */}
+        <div ref={langRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => { setLangOpen(o => !o); setCurrencyOpen(false); }}
+            title="Language"
+            style={{
+              background: langOpen ? '#00BFA5' : 'rgba(0,191,165,0.15)',
+              border: '1px solid #00BFA5',
+              color: langOpen ? '#fff' : '#C8E6F5',
+              borderRadius: 6, padding: '4px 10px',
+              cursor: 'pointer', fontSize: 13, fontWeight: 600,
+              fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}>
+            {currentLangLabel} ▾
+          </button>
+
+          {langOpen && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+              background: '#0A1628', border: '1px solid #00BFA5',
+              borderRadius: 8, width: 180, zIndex: 200,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            }}>
+              {languages.map(l => (
+                <button
+                  key={l.key}
+                  onClick={() => { setLanguage(l.key); setLangOpen(false); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    width: '100%', background: l.key === language ? 'rgba(0,191,165,0.25)' : 'transparent',
+                    border: 'none', color: l.key === language ? '#fff' : '#C8E6F5',
+                    padding: '7px 14px', cursor: 'pointer', fontSize: 13,
+                    textAlign: 'left', fontFamily: 'inherit',
+                  }}
+                >
+                  <span style={{ fontWeight: l.key === language ? 700 : 400 }}>{l.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Currency selector */}
+        <div ref={currencyRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => { setCurrencyOpen(o => !o); setCurrencySearch(''); setLangOpen(false); }}
+            title={t.currency}
+            style={{
+              background: currencyOpen ? '#2D4EF5' : 'rgba(45,78,245,0.15)',
+              border: '1px solid #2D4EF5',
+              color: currencyOpen ? '#fff' : '#C8E6F5',
+              borderRadius: 6, padding: '4px 10px',
+              cursor: 'pointer', fontSize: 13, fontWeight: 600,
+              fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}>
+            {currency} ▾
+          </button>
+
+          {currencyOpen && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+              background: '#0A1628', border: '1px solid #2D4EF5',
+              borderRadius: 8, width: 260, zIndex: 200,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              display: 'flex', flexDirection: 'column',
+            }}>
+              <div style={{ padding: '8px 8px 4px' }}>
+                <input
+                  autoFocus
+                  placeholder={t.currency + '…'}
+                  value={currencySearch}
+                  onChange={e => setCurrencySearch(e.target.value)}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    background: '#111E35', border: '1px solid #2D4EF5',
+                    borderRadius: 5, color: '#C8E6F5', padding: '5px 8px',
+                    fontSize: 12, fontFamily: 'inherit', outline: 'none',
+                  }}
+                />
+              </div>
+              <div style={{ overflowY: 'auto', maxHeight: 260 }}>
+                {filteredCurrencies.map(c => (
+                  <button
+                    key={c.code}
+                    onClick={() => { setCurrency(c.code); setCurrencyOpen(false); setCurrencySearch(''); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      width: '100%', background: c.code === currency ? 'rgba(45,78,245,0.3)' : 'transparent',
+                      border: 'none', color: c.code === currency ? '#fff' : '#C8E6F5',
+                      padding: '6px 12px', cursor: 'pointer', fontSize: 12,
+                      textAlign: 'left', fontFamily: 'inherit',
+                    }}
+                  >
+                    <span style={{ fontWeight: 700, minWidth: 36 }}>{c.code}</span>
+                    <span style={{ color: '#8BA3BF', fontSize: 11 }}>{c.name}</span>
+                  </button>
+                ))}
+                {filteredCurrencies.length === 0 && (
+                  <div style={{ padding: '10px 12px', color: '#8BA3BF', fontSize: 12 }}>No results</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <button
           onClick={downloadAll}
           disabled={downloading}
@@ -135,7 +270,7 @@ export default function Navbar() {
             fontFamily: 'inherit', transition: 'background 0.15s, color 0.15s',
             whiteSpace: 'nowrap',
           }}>
-          {downloading ? '…' : <><span className="nav-label">⬇ Export All</span><span style={{ display: 'none' }} className="nav-label-hidden">⬇</span></>}
+          {downloading ? '…' : <><span className="nav-label">{t.exportAll}</span><span style={{ display: 'none' }} className="nav-label-hidden">⬇</span></>}
         </button>
         <button onClick={toggle} title={dark ? 'Light mode' : 'Dark mode'}
           onMouseEnter={() => setThemeHovered(true)}

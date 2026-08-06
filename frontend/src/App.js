@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './utils/ThemeContext';
 import { DateRangeProvider } from './utils/DateRangeContext';
+import { CurrencyProvider } from './utils/CurrencyContext';
 import OrdersView   from './pages/OrdersView';
 import ProductsView from './pages/ProductsView';
 import CustomersView from './pages/CustomersView';
@@ -11,6 +12,7 @@ import './App.css';
 export default function App() {
   return (
     <ThemeProvider>
+      <CurrencyProvider>
       <DateRangeProvider>
       <BrowserRouter>
         <Routes>
@@ -23,6 +25,7 @@ export default function App() {
         <ChatWidget />
       </BrowserRouter>
       </DateRangeProvider>
+      </CurrencyProvider>
     </ThemeProvider>
   );
 }

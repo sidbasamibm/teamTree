@@ -1,17 +1,7 @@
-/**
- * InsightsModal.js — Reusable modal for displaying product/customer insights
- *
- * Features:
- * - Full-screen overlay modal
- * - Line chart for trends
- * - Summary statistics cards
- * - Top items tables
- * - Close on ESC key or backdrop click
- */
-
 import React, { useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useTheme } from '../utils/ThemeContext';
+import { useCurrency } from '../utils/CurrencyContext';
 
 const CustomersIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"
@@ -43,24 +33,18 @@ const ProductIcon = () => (
   </svg>
 );
 
-function formatCurrency(value) {
-  if (!value) return '$0';
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000)    return `$${(value / 1000).toFixed(0)}K`;
-  return `$${value.toFixed(2)}`;
-}
-
 export default function InsightsModal({ isOpen, onClose, data, type }) {
   const { dark } = useTheme();
+  const { fmt, t } = useCurrency();
   const tickColor = dark ? '#C8E6F5' : '#4A6080';
-  // Close on ESC key
+
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') onClose();
     };
     if (isOpen) {
       document.addEventListener('keydown', handleEsc);
-      document.body.style.overflow = 'hidden'; // Prevent background scroll
+      document.body.style.overflow = 'hidden';
     }
     return () => {
       document.removeEventListener('keydown', handleEsc);
@@ -79,15 +63,10 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
     <div
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        top: 0, left: 0, right: 0, bottom: 0,
         background: 'rgba(0, 0, 0, 0.6)',
         zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 24,
       }}
       onClick={onClose}
@@ -112,14 +91,14 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
             <div>
               <h2 style={{ margin: 0, fontSize: 24, color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }}>
                 {isProduct ? <ProductIcon /> : <CustomersIcon />}
-                {isProduct ? 'Product Insights' : 'Customer Insights'}
+                {isProduct ? t.productInsights : t.customerInsights}
               </h2>
               <div style={{ fontSize: 18, color: 'var(--text-primary)', marginTop: 8, fontWeight: 500 }}>
                 {entity.name}
               </div>
               <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>
                 {isProduct
-                  ? `Category: ${entity.category} • Price: ${formatCurrency(entity.price)}`
+                  ? `${t.category}: ${entity.category} • Price: ${fmt(entity.price)}`
                   : `${entity.city}, ${entity.state} • ${entity.email}`
                 }
               </div>
@@ -127,13 +106,9 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
             <button
               onClick={onClose}
               style={{
-                background: 'transparent',
-                border: 'none',
-                fontSize: 28,
-                cursor: 'pointer',
-                color: 'var(--text-muted)',
-                padding: 0,
-                lineHeight: 1,
+                background: 'transparent', border: 'none',
+                fontSize: 28, cursor: 'pointer',
+                color: 'var(--text-muted)', padding: 0, lineHeight: 1,
               }}
             >
               ×
@@ -144,29 +119,29 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
         {/* Summary Stats Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
           <div className="card" style={{ padding: 16 }}>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Total Revenue</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{t.totalRevenue}</div>
             <div style={{ fontSize: 24, fontWeight: 600, color: 'var(--accent)' }}>
-              {formatCurrency(summary.total_revenue || summary.total_spent)}
+              {fmt(summary.total_revenue || summary.total_spent)}
             </div>
           </div>
           <div className="card" style={{ padding: 16 }}>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Total Orders</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{t.totalOrders}</div>
             <div style={{ fontSize: 24, fontWeight: 600, color: 'var(--text-primary)' }}>
               {summary.total_orders?.toLocaleString()}
             </div>
           </div>
           <div className="card" style={{ padding: 16 }}>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>
-              {isProduct ? 'Units Sold' : 'Items Purchased'}
+              {isProduct ? t.unitsSold : t.itemsPurchased}
             </div>
             <div style={{ fontSize: 24, fontWeight: 600, color: 'var(--text-primary)' }}>
               {(summary.total_units || summary.total_items)?.toLocaleString()}
             </div>
           </div>
           <div className="card" style={{ padding: 16 }}>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Avg Order Value</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{t.avgOrderValue}</div>
             <div style={{ fontSize: 24, fontWeight: 600, color: 'var(--text-primary)' }}>
-              {formatCurrency(summary.avg_order_value)}
+              {fmt(summary.avg_order_value)}
             </div>
           </div>
         </div>
@@ -175,13 +150,13 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
           {/* Trend Chart */}
           <div className="card" style={{ padding: 20 }}>
             <div className="section-title" style={{ marginBottom: 16 }}>
-              {isProduct ? 'Revenue Trend' : 'Spending Trend'}
+              {isProduct ? t.revenueTrend : t.spendingTrend}
             </div>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={trend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <XAxis dataKey="month_name" tick={{ fontSize: 11, fill: tickColor }} />
-                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11, fill: tickColor }} />
-                <Tooltip formatter={(v) => formatCurrency(v)} />
+                <YAxis tickFormatter={fmt} tick={{ fontSize: 11, fill: tickColor }} />
+                <Tooltip formatter={(v) => fmt(v)} />
                 <Line
                   type="monotone"
                   dataKey={isProduct ? 'revenue' : 'total_spent'}
@@ -196,12 +171,12 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
           {/* Category Breakdown (customer only) or Units Chart */}
           {!isProduct && data.category_breakdown && (
             <div className="card" style={{ padding: 20 }}>
-              <div className="section-title" style={{ marginBottom: 16 }}>Category Preferences</div>
+              <div className="section-title" style={{ marginBottom: 16 }}>{t.categoryPreferences}</div>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={data.category_breakdown} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                   <XAxis dataKey="category" tick={{ fontSize: 11, fill: tickColor }} />
-                  <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11, fill: tickColor }} />
-                  <Tooltip formatter={(v) => formatCurrency(v)} />
+                  <YAxis tickFormatter={fmt} tick={{ fontSize: 11, fill: tickColor }} />
+                  <Tooltip formatter={(v) => fmt(v)} />
                   <Bar dataKey="total_spent" fill="var(--accent)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -210,7 +185,7 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
 
           {isProduct && (
             <div className="card" style={{ padding: 20 }}>
-              <div className="section-title" style={{ marginBottom: 16 }}>Units Sold Trend</div>
+              <div className="section-title" style={{ marginBottom: 16 }}>{t.unitsSoldTrend}</div>
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={trend} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                   <XAxis dataKey="month_name" tick={{ fontSize: 11, fill: tickColor }} />
@@ -232,26 +207,26 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
         {/* Top Items Table */}
         <div className="card" style={{ padding: 20, marginTop: 24 }}>
           <div className="section-title" style={{ marginBottom: 16 }}>
-            {isProduct ? 'Top 5 Customers' : 'Top 5 Products Purchased'}
+            {isProduct ? t.top5CustomersModal : t.top5ProductsPurchased}
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
               <tr>
                 {isProduct ? (
                   <>
-                    <th style={headerStyle}>Customer</th>
-                    <th style={headerStyle}>Location</th>
-                    <th style={{ ...headerStyle, textAlign: 'right' }}>Orders</th>
-                    <th style={{ ...headerStyle, textAlign: 'right' }}>Units</th>
-                    <th style={{ ...headerStyle, textAlign: 'right' }}>Total Spent</th>
+                    <th style={headerStyle}>{t.customer}</th>
+                    <th style={headerStyle}>{t.location}</th>
+                    <th style={{ ...headerStyle, textAlign: 'right' }}>{t.orderCount}</th>
+                    <th style={{ ...headerStyle, textAlign: 'right' }}>{t.units}</th>
+                    <th style={{ ...headerStyle, textAlign: 'right' }}>{t.totalSpentCol}</th>
                   </>
                 ) : (
                   <>
-                    <th style={headerStyle}>Product</th>
-                    <th style={headerStyle}>Category</th>
-                    <th style={{ ...headerStyle, textAlign: 'right' }}>Orders</th>
-                    <th style={{ ...headerStyle, textAlign: 'right' }}>Units</th>
-                    <th style={{ ...headerStyle, textAlign: 'right' }}>Total Spent</th>
+                    <th style={headerStyle}>{t.product}</th>
+                    <th style={headerStyle}>{t.category}</th>
+                    <th style={{ ...headerStyle, textAlign: 'right' }}>{t.orderCount}</th>
+                    <th style={{ ...headerStyle, textAlign: 'right' }}>{t.units}</th>
+                    <th style={{ ...headerStyle, textAlign: 'right' }}>{t.totalSpentCol}</th>
                   </>
                 )}
               </tr>
@@ -265,7 +240,7 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
                       <td style={cellStyle}>{item.city}, {item.state}</td>
                       <td style={{ ...cellStyle, textAlign: 'right' }}>{item.order_count}</td>
                       <td style={{ ...cellStyle, textAlign: 'right' }}>{item.units_purchased}</td>
-                      <td style={{ ...cellStyle, textAlign: 'right' }}>{formatCurrency(item.total_spent)}</td>
+                      <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(item.total_spent)}</td>
                     </>
                   ) : (
                     <>
@@ -273,7 +248,7 @@ export default function InsightsModal({ isOpen, onClose, data, type }) {
                       <td style={cellStyle}>{item.category}</td>
                       <td style={{ ...cellStyle, textAlign: 'right' }}>{item.order_count}</td>
                       <td style={{ ...cellStyle, textAlign: 'right' }}>{item.units_purchased}</td>
-                      <td style={{ ...cellStyle, textAlign: 'right' }}>{formatCurrency(item.total_spent)}</td>
+                      <td style={{ ...cellStyle, textAlign: 'right' }}>{fmt(item.total_spent)}</td>
                     </>
                   )}
                 </tr>
