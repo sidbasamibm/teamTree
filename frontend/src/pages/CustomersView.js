@@ -17,6 +17,7 @@ export default function CustomersView() {
   const [customers,       setCustomers]       = useState([]);
   const [sortBy,          setSortBy]          = useState('total_spent');
   const [sortDir,         setSortDir]         = useState('desc');
+  const [search,          setSearch]          = useState('');
   const [loading,         setLoading]         = useState(true);
   const [error,           setError]           = useState(null);
   const [insightsData,    setInsightsData]    = useState(null);
@@ -56,7 +57,16 @@ export default function CustomersView() {
     }
   }
 
-  const sorted = [...customers].sort((a, b) => {
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? customers.filter(c =>
+        c.name?.toLowerCase().includes(q) ||
+        c.city?.toLowerCase().includes(q) ||
+        c.state?.toLowerCase().includes(q)
+      )
+    : customers;
+
+  const sorted = [...filtered].sort((a, b) => {
     const va = a[sortBy], vb = b[sortBy];
     if (typeof va === 'number') return sortDir === 'asc' ? va - vb : vb - va;
     return sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
@@ -79,8 +89,19 @@ export default function CustomersView() {
 
         <div className="filter-bar">
           <DateRangePicker onApply={loadData} />
+          <input
+            type="search"
+            placeholder={`${t.name}, ${t.city}, ${t.state}…`}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+              borderRadius: 6, color: 'var(--text-primary)', padding: '5px 10px',
+              fontSize: 13, fontFamily: 'inherit', outline: 'none', width: 200,
+            }}
+          />
           <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{customers.length} {t.customers}</span>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{sorted.length}{q ? ` / ${customers.length}` : ''} {t.customers}</span>
             <button className="btn-download" onClick={() => exportCsv(sorted, `customers_${startDate}_${endDate}`)} disabled={customers.length === 0}>
               {t.downloadCustomers}
             </button>
