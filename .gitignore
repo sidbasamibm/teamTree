@@ -1,9 +1,51 @@
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+.pytest_cache/
+
+# Environment & Secrets
 .env
-rsa_key.p8
-rsa_key.pub
+.env.local
+*.p8
+*.pem
+*.key
+rsa_key*
+config.toml
+
+# Node
 node_modules/
 build/
+npm-debug.log*
+yarn-error.log*
+
+# Logs
 *.log
+
+# OS
 .DS_Store
+Thumbs.db
+
+# AWS
+task_definition.json
+
+# Snowflake
+.snowflake/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.bak
+.cache/

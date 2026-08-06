@@ -17,8 +17,8 @@ set -e
 
 if [ -z "$REPO_URL" ] || [ -z "$GROUP" ]; then
   echo "Error: REPO_URL and GROUP must be set."
-  echo "  export REPO_URL=<your_repo_url>"
-  echo "  export GROUP=<your_group_number>"
+  echo "  export REPO_URL=https://github.com/sidbasamibm/teamTree"
+  echo "  export GROUP=3"
   exit 1
 fi
 
