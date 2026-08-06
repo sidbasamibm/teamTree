@@ -27,9 +27,12 @@ import time
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 
 from connection import get_connection, execute_query
+from ai_assistant import process_query
 
 load_dotenv()
 
@@ -54,7 +57,7 @@ if CLIENT_VALIDATION == "Dev":
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000", "http://localhost:3001"],
-        allow_methods=["GET"],
+        allow_methods=["GET", "POST"],  # Added POST for /chat endpoint
         allow_headers=["*"],
     )
 
@@ -648,4 +651,48 @@ def get_customer_insights(customer_id: str, start: str = "2022-01-01", end: str 
             for row in category_breakdown
         ]
     }
+
+
+# ── AI Assistant ──────────────────────────────────────────────────────────────
+
+class ChatRequest(BaseModel):
+    message: str
+    conversation: Optional[List[Dict[str, Any]]] = None
+
+@app.post("/chat", tags=["AI Assistant"])
+async def chat(request: ChatRequest):
+    """
+    AI-powered analytics assistant using Ollama with Llama 3.2 (3B).
+
+    Converts natural language queries into structured database queries
+    and returns results with visualization suggestions.
+
+    Requirements:
+    - Ollama must be running locally (localhost:11434)
+    - Llama 3.2 model must be pulled: `ollama pull llama3.2:3b`
+
+    Example queries:
+    - "Show me top 10 products in 2022"
+    - "What were the revenue trends by quarter in Texas?"
+    - "Who are the top customers in Austin?"
+    - "Give me monthly revenue for Q1 2022"
+
+    Returns:
+        message: AI-generated insight summary
+        data: Query results (array or object)
+        chart_type: Suggested visualization (bar, line, stats, table)
+        conversation: Updated conversation history
+        tool_used: Which database tool was used
+    """
+    try:
+        result = await process_query(request.message, request.conversation)
+        return result
+    except Exception as e:
+        return {
+            "message": f"An error occurred: {str(e)}",
+            "data": None,
+            "chart_type": None,
+            "conversation": request.conversation or [],
+            "error": str(e)
+        }
     
