@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import Navbar from '../components/Navbar';
 import { useTheme } from '../utils/ThemeContext';
 import ErrorBanner from '../components/ErrorBanner';
@@ -87,7 +87,9 @@ export default function ProductsView() {
                   <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 12, fill: tickColor }} />
                   <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12, fill: tickColor }} />
                   <Tooltip formatter={v => formatCurrency(v)} />
-                  <Bar dataKey="revenue" fill="var(--accent)" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="revenue" fill="var(--accent)" radius={[0, 4, 4, 0]}>
+                    <LabelList dataKey="revenue" position="right" formatter={formatCurrency} style={{ fontSize: 11, fill: tickColor, fontWeight: 600 }} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>

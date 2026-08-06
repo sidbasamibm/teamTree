@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts';
 import Navbar from '../components/Navbar';
 import { useTheme } from '../utils/ThemeContext';
 import ErrorBanner from '../components/ErrorBanner';
@@ -12,6 +12,7 @@ import { useDateRange } from '../utils/DateRangeContext';
 import { exportCsv } from '../utils/exportCsv';
 
 const fmtCurrency = v => `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+const fmtShort = v => v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(1)}m` : `$${Math.round(v / 1000)}k`;
 
 export default function OrdersView() {
   const { startDate, setStartDate, endDate, setEndDate } = useDateRange();
@@ -158,7 +159,9 @@ export default function OrdersView() {
                     radius={[4, 4, 0, 0]}
                     onClick={handleBarClick}
                     cursor={insightsLoading ? 'wait' : 'pointer'}
-                  />
+                  >
+                    <LabelList dataKey="revenue" position="insideTop" formatter={fmtShort} style={{ fontSize: 11, fill: '#ffffff', fontWeight: 600 }} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -179,7 +182,9 @@ export default function OrdersView() {
                     radius={[0, 4, 4, 0]}
                     onClick={handleCityClick}
                     cursor={insightsLoading ? 'wait' : 'pointer'}
-                  />
+                  >
+                    <LabelList dataKey="revenue" position="right" formatter={fmtShort} style={{ fontSize: 11, fill: tickColor, fontWeight: 600 }} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
