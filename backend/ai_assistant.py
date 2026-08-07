@@ -86,13 +86,22 @@ async def process_query(user_message: str, conversation_history: Optional[List[D
 
     except requests.exceptions.HTTPError as e:
         status = e.response.status_code if e.response is not None else None
+        detail = None
+        if e.response is not None:
+            try:
+                detail = e.response.json().get("detail")
+            except ValueError:
+                detail = e.response.text
+
         if status in (401, 403):
             error_msg = (
                 "ICA rejected the request — check that ICA_API_KEY is valid and "
                 "has access to this model and document collection."
             )
+        elif status == 400:
+            error_msg = f"ICA rejected the request as invalid (400): {detail or e}"
         else:
-            error_msg = f"ICA API error ({status}): {e}"
+            error_msg = f"ICA API error ({status}): {detail or e}"
 
         return {
             "message": f"Sorry, I encountered an error: {error_msg}",
