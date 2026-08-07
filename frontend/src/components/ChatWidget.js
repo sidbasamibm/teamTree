@@ -80,7 +80,7 @@ export default function ChatWidget() {
     setLoading(true);
 
     try {
-      // Call AI backend
+      // Call AI backend - no timeout, wait as long as needed for Ollama
       const response = await fetch(`${BACKEND_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,9 +119,15 @@ export default function ChatWidget() {
 
     } catch (error) {
       // Add error message
+      let errorText = error.message;
+
+      if (error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
+        errorText = 'Failed to connect to backend. Make sure the backend is running at ' + BACKEND_URL;
+      }
+
       const errorMsg = {
         from: 'bot',
-        text: `Sorry, I encountered an error: ${error.message}. Make sure the backend is running and Ollama is started.`,
+        text: `Sorry, I encountered an error: ${errorText}`,
         error: true
       };
       setMessages(prev => [...prev, errorMsg]);
