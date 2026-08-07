@@ -420,7 +420,7 @@ def get_orders(
     # Filter by date range and only include delivered/shipped orders
     results = execute_query(conn, """
         SELECT
-            d.year || '-' || LPAD(d.month::VARCHAR, 2, '0') AS month,
+            d.year || '-' || SUBSTR('00' || d.month, -2) AS month,
             d.month_name,
             COUNT(DISTINCT f.order_id) AS order_count,
             SUM(f.amount) AS revenue
@@ -665,7 +665,7 @@ def get_product_insights(
     # Monthly trend
     monthly_trend = execute_query(conn, """
         SELECT
-            d.year || '-' || LPAD(d.month::VARCHAR, 2, '0') AS month,
+            d.year || '-' || SUBSTR('00' || d.month, -2) AS month,
             d.month_name,
             COUNT(DISTINCT f.order_id) AS order_count,
             SUM(f.quantity) AS units_sold,
@@ -788,7 +788,7 @@ def get_customer_insights(
     # Monthly spending trend
     monthly_trend = execute_query(conn, """
         SELECT
-            d.year || '-' || LPAD(d.month::VARCHAR, 2, '0') AS month,
+            d.year || '-' || SUBSTR('00' || d.month, -2) AS month,
             d.month_name,
             COUNT(DISTINCT f.order_id) AS order_count,
             SUM(f.quantity) AS items_purchased,

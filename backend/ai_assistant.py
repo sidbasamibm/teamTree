@@ -266,8 +266,12 @@ async def process_query(user_message: str, conversation_history: Optional[List[D
                     "error": tool_result['error']
                 }
 
-            # Add assistant's tool call to conversation
-            messages.append(message)
+            # Add assistant's tool call to conversation (convert to dict)
+            messages.append({
+                "role": message.get("role", "assistant"),
+                "content": message.get("content", ""),
+                "tool_calls": message.get("tool_calls")
+            })
 
             # Add tool results to conversation
             messages.append({
@@ -455,7 +459,7 @@ def execute_tool(tool_name: str, params: Dict[str, Any]) -> Any:
             # Build query based on granularity
             if granularity == "monthly":
                 group_by = "d.year, d.month, d.month_name"
-                date_format = "d.year || '-' || printf('%02d', d.month)"
+                date_format = "d.year || '-' || SUBSTR('00' || d.month, -2)"
                 order_by = "d.year, d.month"
             else:  # quarterly
                 group_by = "d.year, d.quarter"

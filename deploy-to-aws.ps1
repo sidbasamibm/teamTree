@@ -154,12 +154,35 @@ $NewRevision = $RegisterResult.taskDefinition.revision
 Write-Host "Registered new task definition: novacart-group${GROUP}:${NewRevision}" -ForegroundColor Green
 Write-Host ""
 
+# Check current service state
+Write-Host "Step 5: Checking current service state..." -ForegroundColor Yellow
+$CurrentService = aws ecs describe-services --cluster $CLUSTER --services $SERVICE --region $REGION --output json | ConvertFrom-Json
+
+if ($CurrentService.services.Count -eq 0) {
+    Write-Host "Error: Service $SERVICE not found in cluster $CLUSTER!" -ForegroundColor Red
+    Write-Host "Available services:" -ForegroundColor Yellow
+    aws ecs list-services --cluster $CLUSTER --region $REGION --output text
+    exit 1
+}
+
+$CurrentDesiredCount = $CurrentService.services[0].desiredCount
+Write-Host "Current desired count: $CurrentDesiredCount" -ForegroundColor White
+
+# Ensure at least 1 task is desired
+$DesiredCount = if ($CurrentDesiredCount -eq 0) { 1 } else { $CurrentDesiredCount }
+
+if ($CurrentDesiredCount -eq 0) {
+    Write-Host "Service is scaled to 0, will scale up to 1 task" -ForegroundColor Yellow
+}
+Write-Host ""
+
 # Update ECS service to use new task definition
-Write-Host "Step 5: Updating ECS Service..." -ForegroundColor Yellow
+Write-Host "Step 6: Updating ECS Service..." -ForegroundColor Yellow
 aws ecs update-service `
     --cluster $CLUSTER `
     --service $SERVICE `
     --task-definition "novacart-group${GROUP}:${NewRevision}" `
+    --desired-count $DesiredCount `
     --force-new-deployment `
     --region $REGION `
     --output json > $null
@@ -173,7 +196,7 @@ Write-Host "Service update initiated!" -ForegroundColor Green
 Write-Host ""
 
 # Wait for deployment
-Write-Host "Step 6: Waiting for deployment to complete..." -ForegroundColor Yellow
+Write-Host "Step 7: Waiting for deployment to complete..." -ForegroundColor Yellow
 Write-Host "This may take 2-3 minutes..." -ForegroundColor Gray
 Write-Host ""
 
@@ -209,7 +232,7 @@ if ($ElapsedTime -ge $MaxWaitTime) {
 
 # Get public IP
 Write-Host ""
-Write-Host "Step 7: Getting Public IP..." -ForegroundColor Yellow
+Write-Host "Step 8: Getting Public IP..." -ForegroundColor Yellow
 
 $TaskArn = aws ecs list-tasks --cluster $CLUSTER --service $SERVICE --region $REGION --query 'taskArns[0]' --output text
 
