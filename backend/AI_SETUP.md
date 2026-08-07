@@ -2,64 +2,74 @@
 
 ## Overview
 
-The NovaCart dashboard now includes an AI-powered analytics assistant that converts natural language queries into structured database queries using Ollama with Llama 3.2.
+The NovaCart dashboard includes an AI-powered analytics assistant that answers
+natural-language questions using IBM Consulting Advantage (ICA). Instead of
+running a model locally, the backend calls ICA's chat-completions API and
+references an existing ICA **Document Collection**, so ICA performs
+retrieval-augmented generation (RAG) server-side and returns an answer grounded
+in your documents, plus the sources it cited.
 
 ## Prerequisites
 
-### 1. Install Ollama
+### 1. An ICA account with a Document Collection already set up
 
-**Windows:**
-1. Download from: https://ollama.com/download
-2. Run the installer
-3. Ollama will start automatically as a Windows service
+This integration assumes you already have a Document Collection configured on
+your ICA account (created via the ICA UI or the Document Collections API). If
+you don't have one yet, create it in the ICA UI first and upload/attach the
+files you want the assistant to answer from.
 
-**Mac:**
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-```
+### 2. Get a developer API key
 
-**Linux:**
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-```
+In the ICA UI: **Settings → API Keys → ICA APIs**. Generate a key and keep it
+somewhere safe — it goes into `backend/.env` as `ICA_API_KEY`.
 
-### 2. Pull the Model
+### 3. Find your Document Collection ID
 
 ```bash
-# Pull the 3B model (good balance of speed and quality)
-ollama pull llama3.2:3b
-
-# This downloads ~2GB and takes 2-3 minutes
+curl -H "Authorization: Bearer $ICA_API_KEY" \
+  https://api.nextgen-beta.ica.ibm.com/ica/v1/document-collections
 ```
 
-### 3. Verify Ollama is Running
+Find your collection in the response and copy its `id`. Confirm every file in
+it shows `"status": "completed"` (not `"pending"`) — files are processed
+asynchronously after upload, and referencing a collection with unprocessed
+files can produce incomplete answers.
 
-```bash
-# Check that Ollama is accessible
-curl http://localhost:11434/api/tags
+### 4. Pick a model
 
-# Should return JSON with available models
-```
+Check the ICA UI for the model identifiers available on your account, and use
+one that supports the `chat-models` namespace.
 
 ## Backend Setup
 
-### 1. Install Python Dependencies
+### 1. Configure environment variables
+
+Copy `backend/.env.example` to `backend/.env` and fill in:
+
+```
+ICA_BASE_URL=https://api.nextgen-beta.ica.ibm.com/ica/v1
+ICA_API_KEY=your_ica_api_key
+ICA_MODEL=your_model_id
+ICA_COLLECTION_ID=your_collection_id
+ICA_NAMESPACE=chat-models
+```
+
+### 2. Install Python Dependencies
 
 ```bash
 cd backend
 pip install -r requirements.txt
 ```
 
-This installs:
-- `ollama>=0.3.0` - Python client for Ollama
+This installs `requests`, used to call the ICA REST API.
 
-### 2. Start the Backend
+### 3. Start the Backend
 
 ```bash
 python -m uvicorn main:app --reload --port 8000
 ```
 
-The backend will now have a `/chat` endpoint at `http://localhost:8000/chat`
+The backend will now have a `/chat` endpoint at `http://localhost:8000/chat`.
 
 ## API Documentation
 
@@ -70,7 +80,7 @@ The backend will now have a `/chat` endpoint at `http://localhost:8000/chat`
 **Request Body:**
 ```json
 {
-  "message": "Show me top 10 products in 2022",
+  "message": "What were our best-selling products last quarter?",
   "conversation": []  // Optional: previous conversation history
 }
 ```
@@ -78,161 +88,63 @@ The backend will now have a `/chat` endpoint at `http://localhost:8000/chat`
 **Response:**
 ```json
 {
-  "message": "Here are the top 10 products by revenue in 2022...",
-  "data": [
-    {
-      "product_id": "P001",
-      "name": "Wireless Headphones",
-      "category": "Electronics",
-      "units_sold": 342,
-      "revenue": 30578.58
-    }
-    // ... more products
-  ],
-  "chart_type": "bar",  // Suggested visualization
-  "conversation": [...],  // Updated conversation history
-  "tool_used": "query_top_products"
+  "message": "Based on the connected documents, the best-selling products last quarter were...",
+  "sources": ["catalog_2022.pdf", "sales_notes.docx"],
+  "conversation": [...]  // Updated conversation history
 }
 ```
 
-## Available Tools
+If something goes wrong, the response comes back as a normal 200 with `error`
+populated instead of an HTTP error status, so the chat UI can show a friendly
+message:
 
-The AI assistant can use these tools to query data:
-
-1. **query_top_products** - Get top N products by revenue
-   - Filters: date range, city, state
-   - Example: "Show top products in Texas"
-
-2. **query_top_customers** - Get top customers by spending
-   - Filters: date range, city, state
-   - Example: "Who are the top customers in Austin?"
-
-3. **query_revenue_trend** - Get revenue trends over time
-   - Granularity: monthly or quarterly
-   - Filters: date range, city, state
-   - Example: "Show quarterly revenue trends"
-
-4. **query_city_breakdown** - Get revenue by city and state
-   - Filters: date range, limit
-   - Example: "Revenue breakdown by city"
-
-5. **query_summary_stats** - Get summary statistics
-   - Filters: date range, city, state
-   - Example: "Summary stats for Q1 2022"
+```json
+{
+  "message": "Sorry, I encountered an error: ICA rejected the request — check that ICA_API_KEY is valid...",
+  "sources": null,
+  "conversation": [...],
+  "error": "ICA rejected the request — check that ICA_API_KEY is valid..."
+}
+```
 
 ## Example Queries
 
 ```bash
-# Using curl
 curl -X POST http://localhost:8000/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "Show me top 10 products in 2022"}'
-
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "What were the revenue trends by quarter in Texas?"}'
+  -d '{"message": "What does our return policy say about damaged items?"}'
 
 curl -X POST http://localhost:8000/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "Who are the top 5 customers in Austin?"}'
-
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Give me monthly revenue for Q1 2022"}'
-```
-
-## Testing the Integration
-
-### Quick Test Script
-
-Create `test_ai.py` in the backend directory:
-
-```python
-import requests
-import json
-
-def test_chat(message):
-    response = requests.post(
-        'http://localhost:8000/chat',
-        json={'message': message}
-    )
-    result = response.json()
-    
-    print(f"\n{'='*60}")
-    print(f"Query: {message}")
-    print(f"{'='*60}")
-    print(f"Response: {result['message']}")
-    print(f"Chart Type: {result.get('chart_type')}")
-    print(f"Tool Used: {result.get('tool_used')}")
-    
-    if result.get('data'):
-        print(f"Data rows: {len(result['data']) if isinstance(result['data'], list) else 'N/A'}")
-    
-    if result.get('error'):
-        print(f"ERROR: {result['error']}")
-
-# Test queries
-test_chat("Show me top 5 products in 2022")
-test_chat("What were the revenue trends by quarter?")
-test_chat("Who are the top 3 customers in Texas?")
-test_chat("Give me summary stats for Q1 2022")
-```
-
-Run with:
-```bash
-python test_ai.py
+  -d '{"message": "Summarize the key points from last quarter'\''s sales report."}'
 ```
 
 ## Troubleshooting
 
-### Error: "Connection refused" or "Ollama is not running"
+### Error: "ICA rejected the request" (401/403)
 
-**Solution:** Start Ollama service
-```bash
-# Windows: Should start automatically, but if not:
-# Run Ollama from Start Menu
+**Solution:** Double-check `ICA_API_KEY` in `backend/.env` — it may be missing,
+expired, or lack access to the configured model/collection. Regenerate it from
+the ICA UI if needed.
 
-# Mac/Linux:
-ollama serve
-```
+### Error: "The AI assistant isn't configured yet"
 
-### Error: "Model not found"
+**Solution:** `ICA_API_KEY` or `ICA_COLLECTION_ID` is unset in `backend/.env`.
+Fill in both (see Backend Setup above) and restart the backend.
 
-**Solution:** Pull the model
-```bash
-ollama pull llama3.2:3b
-```
+### Answers don't reference the documents you expect
+
+**Solution:**
+- Confirm `ICA_COLLECTION_ID` points at the collection containing those files.
+- Confirm the files show `"status": "completed"` via `GET /document-collections/{id}`
+  — files still `"pending"` won't be searchable yet.
+- Try rephrasing the question closer to the document's own wording.
 
 ### Slow responses
 
-**Solution:** 
-- First query loads the model into memory (~3-4GB RAM)
-- Subsequent queries are faster
-- Model stays loaded for ~5 minutes after last use
-- Consider upgrading to a machine with more RAM if consistently slow
-
-### Wrong results or hallucinations
-
-**Solution:**
-- The model is small (3B parameters) for speed
-- For better quality, use a larger model:
-  ```bash
-  ollama pull llama3.2:7b
-  # or
-  ollama pull mistral
-  ```
-  Then update `ai_assistant.py` line 182 and 229:
-  ```python
-  model='llama3.2:7b'  # Instead of llama3.2:3b
-  ```
-
-## Model Options
-
-| Model | Size | RAM Needed | Quality | Speed |
-|-------|------|------------|---------|-------|
-| llama3.2:3b (default) | 2GB | 4-6GB | Good | Fast |
-| llama3.2:7b | 4GB | 8-10GB | Better | Medium |
-| mistral:7b | 4GB | 8-10GB | Better | Medium |
+RAG queries involve a retrieval step over the collection before the model
+generates an answer, so responses may take longer than a plain chat completion.
+This is expected and happens on ICA's side.
 
 ## Architecture
 
@@ -241,27 +153,26 @@ Frontend (React) → POST /chat → FastAPI Backend
                                      ↓
                               ai_assistant.py
                                      ↓
-                              HTTP request to Ollama (localhost:11434)
+                    HTTPS request to ICA chat-models/chat/completions
+                    (with files: [{"type": "collection", "id": ...}])
                                      ↓
-                              Llama 3.2 (function calling)
+                    ICA retrieves relevant document chunks (RAG)
                                      ↓
-                              Tool execution (SQL queries)
-                                     ↓
-                              Response with data + insights
+                    Response with answer + cited sources
 ```
 
 ## Security Notes
 
-- Ollama runs locally, no external API calls
-- All data stays on your machine
-- SQL queries are validated and parameterized
-- Date ranges limited to 2 years max
-- Result limits capped at 50 rows per query
+- Unlike the previous local-Ollama setup, questions and document content are
+  now sent to IBM Consulting Advantage over HTTPS — data leaves your machine.
+- Keep `ICA_API_KEY` out of version control; it's read from `backend/.env`,
+  which is gitignored.
+- The assistant only has access to whatever the configured Document Collection
+  contains — scope that collection to what you're comfortable exposing to the chat UI.
 
 ## Next Steps
 
 Once the backend is working:
-1. Update frontend ChatWidget to call `/chat` endpoint
-2. Add dynamic chart rendering based on `chart_type`
-3. Implement conversation history persistence
-4. Add loading states and error handling
+1. Verify the frontend `ChatWidget` renders the `sources` citations correctly.
+2. Consider adding a UI affordance to preview/download a cited source document.
+3. Implement conversation history persistence if you want chats to survive a page reload.

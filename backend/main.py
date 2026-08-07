@@ -55,7 +55,7 @@ app = FastAPI(
         {"name": "Auth", "description": "Identity/authorization endpoint used by the SPCS OAuth flow."},
         {"name": "Franchise", "description": "Aggregate analytics across orders, products, customers, and cities."},
         {"name": "Insights", "description": "Deep-dive analytics for a single product or customer."},
-        {"name": "AI Assistant", "description": "Natural-language analytics assistant backed by a local LLM (Ollama)."},
+        {"name": "AI Assistant", "description": "Natural-language analytics assistant backed by IBM Consulting Advantage (ICA), grounded in a Document Collection."},
     ],
 )
 
@@ -917,22 +917,18 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    message: str = Field(description="AI-generated insight summary.", examples=["Here are the top 10 products by revenue in 2022."])
-    data: Optional[Any] = Field(None, description="Query results returned by the tool the assistant selected — a list of records, a single object, or null.")
-    chart_type: Optional[str] = Field(None, description="Suggested visualization type.", examples=["bar"])
+    message: str = Field(description="AI-generated answer, grounded in the connected Document Collection.", examples=["Here are the top 10 products by revenue in 2022."])
+    sources: Optional[List[str]] = Field(None, description="Source documents ICA cited when answering, if any.", examples=[["catalog_2022.pdf", "sales_notes.docx"]])
     conversation: List[Dict[str, Any]] = Field(default_factory=list, description="Updated conversation history; pass back on the next call to maintain context.")
-    tool_used: Optional[str] = Field(None, description="Name of the internal database tool the assistant invoked.", examples=["get_top_products"])
     error: Optional[str] = Field(None, description="Present only if an error occurred while processing the query.")
 
     model_config = ConfigDict(json_schema_extra={"example": {
         "message": "Here are the top 10 products by revenue in 2022.",
-        "data": [{"product_id": "P001", "name": "Wireless Headphones", "category": "Electronics", "units_sold": 342, "revenue": 30578.58}],
-        "chart_type": "bar",
+        "sources": ["catalog_2022.pdf", "sales_notes.docx"],
         "conversation": [
             {"role": "user", "content": "Show me top 10 products in 2022"},
             {"role": "assistant", "content": "Here are the top 10 products by revenue in 2022."},
         ],
-        "tool_used": "get_top_products",
     }})
 
 
@@ -944,14 +940,15 @@ class ChatResponse(BaseModel):
 )
 async def chat(request: ChatRequest):
     """
-    AI-powered analytics assistant using Ollama with Llama 3.2 (3B).
+    AI-powered analytics assistant backed by IBM Consulting Advantage (ICA).
 
-    Converts natural language queries into structured database queries
-    and returns results with visualization suggestions.
+    Sends the question to an ICA chat model along with a reference to a
+    pre-configured ICA Document Collection, so ICA performs retrieval-augmented
+    generation server-side and returns an answer plus the source documents it used.
 
     Requirements:
-    - Ollama must be running locally (localhost:11434)
-    - Llama 3.2 model must be pulled: `ollama pull llama3.2:3b`
+    - ICA_API_KEY, ICA_MODEL, and ICA_COLLECTION_ID must be set in backend/.env
+    - The referenced Document Collection must already exist on the ICA account
 
     Example queries:
     - "Show me top 10 products in 2022"
@@ -969,8 +966,7 @@ async def chat(request: ChatRequest):
     except Exception as e:
         return {
             "message": f"An error occurred: {str(e)}",
-            "data": None,
-            "chart_type": None,
+            "sources": None,
             "conversation": request.conversation or [],
             "error": str(e)
         }

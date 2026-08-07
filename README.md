@@ -33,7 +33,7 @@ User → NGINX (router) → FastAPI backend → Snowflake
 backend/          Python + FastAPI API
   main.py         API endpoints (franchise summary/orders/products/customers/cities, AI chat)
   connection.py   Handles local dev (SQLite) + SPCS (Snowflake) automatically
-  ai_assistant.py Optional local AI assistant (Ollama) — see backend/AI_SETUP.md
+  ai_assistant.py AI assistant backed by ICA (Document Collection RAG) — see backend/AI_SETUP.md
   requirements.txt
   Dockerfile
 
@@ -57,7 +57,7 @@ build-and-push.sh   Builds and pushes all three Docker images to the SPCS image 
 - [Node.js 18+](https://nodejs.org/) and npm
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (only needed for containerized/SPCS deployment)
 - [Snowflake CLI](https://docs.snowflake.com/en/developer-guide/snowflake-cli/index) (only needed to deploy to SPCS): `pip3 install snowflake-cli-labs`
-- (Optional) [Ollama](https://ollama.com/download) if you want to run the local AI assistant
+- An IBM Consulting Advantage (ICA) API key and Document Collection if you want the AI assistant's `/chat` endpoint to work — see `backend/AI_SETUP.md`
 
 ## Running locally
 
@@ -93,14 +93,16 @@ Opens at http://localhost:3000 and talks to the backend at `REACT_APP_BACKEND_UR
 
 With both running, open http://localhost:3000 — the dashboard should load and `ServiceStatus` should show the backend as connected.
 
-### 3. Optional — local AI assistant
+### 3. AI assistant
 
-The backend includes an optional `/chat` endpoint backed by a locally-running LLM via [Ollama](https://ollama.com/download):
+The backend includes a `/chat` endpoint backed by IBM Consulting Advantage
+(ICA), grounded in an existing ICA Document Collection. Fill in `ICA_API_KEY`,
+`ICA_MODEL`, and `ICA_COLLECTION_ID` in `backend/.env`, then sanity-check it:
 
 ```bash
-ollama pull llama3.2:3b
-cd backend
-python test_ai.py   # sanity-checks the /chat endpoint
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What does our return policy say about damaged items?"}'
 ```
 
 See `backend/AI_SETUP.md` and `backend/QUICK_START.md` for details.

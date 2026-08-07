@@ -49,3 +49,5 @@ task_definition.json
 *.tmp
 *.bak
 .cache/
+ica_api_docs.pdf
+novacart_export_2022-01-01_2022-12-31.csv

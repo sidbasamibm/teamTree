@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useTheme } from '../utils/ThemeContext';
-import DynamicChart from './DynamicChart';
 import addDocumentIcon from './add--document.svg';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
@@ -80,7 +81,7 @@ export default function ChatWidget() {
     setLoading(true);
 
     try {
-      // Call AI backend - no timeout, wait as long as needed for Ollama
+      // Call AI backend - no timeout, wait as long as needed for ICA to respond
       const response = await fetch(`${BACKEND_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,8 +101,7 @@ export default function ChatWidget() {
       const botMsg = {
         from: 'bot',
         text: result.message || 'I apologize, but I could not process that request.',
-        data: result.data,
-        chartType: result.chart_type,
+        sources: result.sources,
         error: result.error
       };
 
@@ -110,11 +110,6 @@ export default function ChatWidget() {
       // Update conversation history
       if (result.conversation) {
         setConversation(result.conversation);
-      }
-
-      // Auto-expand if response has chart data
-      if (result.data && result.chart_type) {
-        setExpanded(true);
       }
 
     } catch (error) {
@@ -154,9 +149,26 @@ export default function ChatWidget() {
   const border  = dark ? '#2e3d50' : '#e5e7eb';
   const textCol = dark ? '#e0e0e0' : '#1f2328';
   const mutedBg = dark ? '#0D1B2A' : '#f7f8fa';
+  const codeBg  = dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)';
+  const codeCol = dark ? '#e0e0e0' : '#1f2328';
 
   return (
     <>
+      <style>{`
+        .md-content > *:first-child { margin-top: 0; }
+        .md-content > *:last-child { margin-bottom: 0; }
+        .md-content p { margin: 0 0 6px; }
+        .md-content ul, .md-content ol { margin: 4px 0 6px; padding-left: 20px; }
+        .md-content li { margin-bottom: 2px; }
+        .md-content a { color: #4DB6AC; }
+        .md-content code { background: ${codeBg}; color: ${codeCol}; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+        .md-content pre { background: ${codeBg}; padding: 8px; border-radius: 6px; overflow-x: auto; margin: 4px 0 6px; }
+        .md-content pre code { background: none; padding: 0; }
+        .md-content table { border-collapse: collapse; margin: 4px 0 6px; font-size: 12px; }
+        .md-content th, .md-content td { border: 1px solid ${border}; padding: 4px 8px; }
+        .md-content blockquote { margin: 4px 0 6px; padding-left: 10px; border-left: 3px solid ${border}; opacity: 0.85; }
+      `}</style>
+
       {/* Floating button */}
       <button
         onClick={() => setOpen(o => !o)}
@@ -245,18 +257,30 @@ export default function ChatWidget() {
             {messages.map((msg, i) => (
               <div key={i} style={{
                 alignSelf: msg.from === 'user' ? 'flex-end' : 'flex-start',
-                maxWidth: msg.data ? '95%' : '80%',
+                maxWidth: '80%',
                 background: msg.from === 'user' ? '#4DB6AC' : (dark ? '#1E2A3A' : '#ffffff'),
                 color: msg.from === 'user' ? '#fff' : textCol,
                 borderRadius: msg.from === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
                 padding: '8px 12px', fontSize: 13, lineHeight: 1.5,
                 border: msg.from === 'bot' ? `1px solid ${border}` : 'none',
               }}>
-                {msg.text}
+                {msg.from === 'bot' ? (
+                  <div className="md-content">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                  </div>
+                ) : (
+                  msg.text
+                )}
 
-                {/* Render dynamic chart if data is present */}
-                {msg.data && msg.chartType && (
-                  <DynamicChart data={msg.data} chartType={msg.chartType} />
+                {/* Show cited source documents, if any */}
+                {msg.sources && msg.sources.length > 0 && (
+                  <div style={{
+                    marginTop: 8,
+                    fontSize: 11,
+                    color: dark ? '#8fa5bd' : '#6b7785',
+                  }}>
+                    Sources: {msg.sources.join(', ')}
+                  </div>
                 )}
 
                 {/* Show error indicator */}
